@@ -1,0 +1,25 @@
+# Dockerfile issues that are acceptable for our use case
+
+# Running as root user in container (HIGH)
+# https://avd.aquasec.com/misconfig/ds002
+AVD-DS-0002
+
+# Missing HEALTHCHECK instruction (LOW)
+# https://avd.aquasec.com/misconfig/ds026
+AVD-DS-0026
+
+# Missing tag in FROM statement (MEDIUM)
+# https://avd.aquasec.com/misconfig/ds001
+AVD-DS-0001
+
+# Using RUN cd instead of WORKDIR (MEDIUM)
+# https://avd.aquasec.com/misconfig/ds013
+AVD-DS-0013
+
+# Missing yum clean all after yum install (HIGH)
+# https://avd.aquasec.com/misconfig/ds015
+AVD-DS-0015
+
+# Lambda function tracing not enabled (LOW)
+# https://avd.aquasec.com/misconfig/avd-aws-0066
+AVD-AWS-0066
