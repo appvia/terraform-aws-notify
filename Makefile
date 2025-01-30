@@ -161,4 +161,4 @@ clean:
 	done
 
 lambda-test:
-	pytest assets/tests/test_event_parser.py -v
+	pytest assets/notifications/tests/test_event_parser.py -v

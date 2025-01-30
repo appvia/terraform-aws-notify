@@ -2,14 +2,15 @@ import json
 import pytest
 import sys
 from pathlib import Path
+import os
 
 # Add the assets directory to Python path for imports
 assets_dir = str(Path(__file__).parent.parent)
 if assets_dir not in sys.path:
     sys.path.append(assets_dir)
 
-from lambda_function import lambda_handler
-from events import EventParser
+from notifications.lambda_function import lambda_handler
+from notifications.events import EventParser
 
 
 def get_cloudwatch_alarm_event():
@@ -33,6 +34,7 @@ def get_cloudwatch_alarm_event():
                             "OldStateValue": "OK",
                             "StateChangeTime": "2024-03-21T12:00:00Z",
                             "NewStateReason": "Threshold crossed",
+                            "timestamp": "2024-03-21T12:00:00Z"
                         }
                     )
                 },
@@ -67,9 +69,11 @@ def get_securityhub_event():
                                         "Resources": [{"Type": "AWS::EC2::Instance"}],
                                         "Region": "us-east-1",
                                         "Compliance": {"Status": "FAILED"},
+                                        "timestamp": "2024-03-21T12:00:00Z"
                                     }
                                 ]
                             },
+                            "timestamp": "2024-03-21T12:00:00Z"
                         }
                     )
                 },
@@ -144,3 +148,39 @@ def test_missing_records():
     event = {}
     with pytest.raises(ValueError):
         lambda_handler(event, None)
+
+
+def test_webhook_url_configuration():
+    """
+    Test that the lambda handler correctly uses the configured webhook URL.
+
+    Verifies that:
+    - The lambda can access the SLACK_WEBHOOK_URL from environment variables
+    - The URL matches the expected test URL
+    """
+    assert os.environ.get('SLACK_WEBHOOK_URL') == 'https://hooks.slack.com/test'
+    assert os.environ.get('NOTIFICATION_PLATFORM') == 'slack'
+    
+    # Test with a CloudWatch event to ensure end-to-end processing
+    event = get_cloudwatch_alarm_event()
+    response = lambda_handler(event, None)
+    
+    assert response["statusCode"] == 200
+    assert "Event processed successfully" in response["body"]
+
+
+@pytest.fixture(autouse=True)
+def setup_test_env():
+    """
+    Fixture to set up test environment variables before each test.
+    The autouse=True ensures this runs automatically for each test.
+    """
+    original_environ = dict(os.environ)
+    os.environ['SLACK_WEBHOOK_URL'] = 'https://hooks.slack.com/test'
+    os.environ['NOTIFICATION_PLATFORM'] = 'slack'
+    
+    yield  # This runs the test
+    
+    # Cleanup after test
+    os.environ.clear()
+    os.environ.update(original_environ)

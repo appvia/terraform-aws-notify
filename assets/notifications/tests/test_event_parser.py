@@ -1,5 +1,6 @@
 from datetime import datetime
 from ..events import EventParser, NormalizedEvent
+import pytest
 
 
 class TestEventParser:

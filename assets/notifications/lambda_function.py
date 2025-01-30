@@ -11,17 +11,18 @@ logger = logging.getLogger()
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 logger.setLevel(getattr(logging, log_level, logging.INFO))
 
+
 def get_notification_config():
     """
     Get and validate notification configuration from environment variables.
 
-    This function retrieves the notification platform and corresponding webhook URLs
-    from environment variables. It validates that the platform is supported
-    (either 'slack' or 'teams') and that the required webhook URL for the
-    selected platform is present.
+    This function retrieves the notification platform and corresponding
+    webhook URLs from environment variables. It validates that the platform
+    is supported (either 'slack' or 'teams') and that the required webhook URL
+    for the selected platform is present.
 
     Environment Variables:
-        NOTIFICATION_PLATFORM: The platform to use ('slack' or 'teams'). Defaults to 'slack'
+        NOTIFICATION_PLATFORM: The platform to use ('slack' or 'teams)
         SLACK_WEBHOOK_URL: Required webhook URL if platform is 'slack'
         TEAMS_WEBHOOK_URL: Required webhook URL if platform is 'teams'
 
@@ -32,11 +33,12 @@ def get_notification_config():
             - teams_webhook_url: str - The Teams webhook URL
 
     Raises:
-        ValueError: If the platform is unsupported or if the required webhook URL is missing
+        ValueError: If the platform is unsupported or if the required webhook
+        URL is missing
     """
     platform = os.environ.get("NOTIFICATION_PLATFORM", "slack").lower()
-    logger.debug(f"Notification platform: {platform}")
-    
+    logger.debug("Notification platform: %s", platform)
+
     if platform not in ["slack", "teams"]:
         raise ValueError(f"Unsupported notification platform: {platform}")
 
@@ -65,22 +67,21 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
     """
     Main Lambda handler to process various AWS events and send notifications
     """
-    logger.debug("Lambda handler started")
-    logger.debug(f"Received event: {json.dumps(event)}")
-    
+    logger.debug("Received event: %s", json.dumps(event))
+
     try:
         # Get notification configuration
         config = get_notification_config()
-        logger.debug(f"Using platform: {config['platform']}")
+        logger.debug("Using platform: %s", config["platform"])
 
         # Validate platform
         if config["platform"] not in ["slack", "teams"]:
-            raise ValueError(f"Invalid platform: {config['platform']}")
+            raise ValueError(f"Invalid platform: {config["platform"]}")
 
         # Parse and normalize the event
         parser = EventParser()
         normalized_event = parser.parse_event(event)
-        logger.debug(f"Normalized event: {json.dumps(normalized_event)}")
+        logger.debug("Normalized event: %s", json.dumps(normalized_event))
 
         # Create appropriate formatter and sender based on platform
         if config["platform"] == "slack":
@@ -92,12 +93,12 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
 
         # Format the message
         message = formatter.format_message(normalized_event)
-        logger.debug(f"Formatted message: {json.dumps(message)}")
+        logger.debug("Formatted message: %s", json.dumps(message))
 
         # Send the message
         logger.debug("Attempting to send message")
         success = sender.send_message(message)
-        logger.info(f"Message sent successfully: {success}")
+        logger.info("Message sent successfully: %s", success)
 
         return {
             "statusCode": 200 if success else 500,
@@ -113,5 +114,5 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error processing event: {str(e)}", exc_info=True)
+        logger.error("Error processing event: %s", str(e), exc_info=True)
         raise

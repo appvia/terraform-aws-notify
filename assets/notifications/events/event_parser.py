@@ -1,36 +1,41 @@
 from typing import Dict, Any
 import json
-from dataclasses import dataclass
 from datetime import datetime
 from .normalized_event import NormalizedEvent
 
 
 class EventParser:
     """
-    Parses and normalizes different types of AWS events into a consistent format.
-    This class handles various AWS event types and provides a default parser for unknown events.
+    Parses and normalizes different types of AWS events into a
+    consistent format. This class handles various AWS event types
+    and provides a default parser for unknown events.
     """
 
+    def __init__(self):
+        self._parser_cache = {}
+
     def parse_event(self, event: Dict[Any, Any]) -> NormalizedEvent:
-        """
-        Parse and normalize different types of AWS events into a standardized format.
+        """Parse event with proper timestamp validation"""
+        # Validate timestamp first
+        if "timestamp" not in event:
+            raise ValueError("Missing timestamp in event")
+            
+        try:
+            timestamp = datetime.fromisoformat(event["timestamp"].replace('Z', '+00:00'))
+        except (ValueError, AttributeError):
+            raise ValueError("Invalid timestamp format")
 
-        Args:
-            event (Dict[Any, Any]): The raw AWS event to parse
-
-        Returns:
-            NormalizedEvent: A normalized representation of the event
-
-        Raises:
-            Exception: If the event cannot be parsed or normalized
-        """
         try:
             event_type = self._determine_event_type(event)
-            parser_method = getattr(self, f"_parse_{event_type}", None)
-            if parser_method:
-                return parser_method(event)
-            return self._parse_default(event)
+            
+            if event_type not in self._parser_cache:
+                parser_name = f"_parse_{event_type}"
+                self._parser_cache[event_type] = getattr(self, parser_name, self._parse_default)
+            
+            return self._parser_cache[event_type](event)
+            
         except ValueError as e:
+            # Only catch event type determination errors
             print(f"Warning: {str(e)}. Using default parser.")
             return self._parse_default(event)
 
@@ -74,8 +79,8 @@ class EventParser:
 
     def _parse_default(self, event: Dict[Any, Any]) -> NormalizedEvent:
         """
-        Default parser for handling unknown event types. Attempts to extract meaningful
-        information from any AWS event structure.
+        Default parser for handling unknown event types. Attempts to extract
+        meaningful information from any AWS event structure.
 
         Args:
             event (Dict[Any, Any]): The raw event to parse
@@ -197,7 +202,8 @@ class EventParser:
 
     def _extract_severity(self, message: Dict[str, Any]) -> str:
         """
-        Extract the severity level from the event message by checking various severity-related fields.
+        Extract the severity level from the event message by checking various
+        severity-related fields.
 
         Args:
             message (Dict[str, Any]): The event message to analyze

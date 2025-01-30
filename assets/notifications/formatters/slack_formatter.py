@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from .base_formatter import BaseFormatter
 from .event_types import EventType
-from ..events import NormalizedEvent
+from notifications.events import NormalizedEvent
 
 
 class SlackFormatter(BaseFormatter):
