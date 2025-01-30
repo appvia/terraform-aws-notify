@@ -1,6 +1,15 @@
 import json
-from ..lambda_function import lambda_handler
-from ..events import EventParser  # Add if needed for tests
+import pytest
+import sys
+from pathlib import Path
+
+# Add the assets directory to Python path for imports
+assets_dir = str(Path(__file__).parent.parent)
+if assets_dir not in sys.path:
+    sys.path.append(assets_dir)
+
+from lambda_function import lambda_handler
+from events import EventParser
 
 
 def get_cloudwatch_alarm_event():

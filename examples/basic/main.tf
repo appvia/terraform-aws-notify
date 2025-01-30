@@ -9,19 +9,28 @@ module "notifications" {
   source = "../.."
 
   # creates the SNS topic of the given name, and allows CloudWatch service to post to topic
-  allowed_aws_services = ["cloudwatch.amazonaws.com"]
-  create_sns_topic     = true
-  sns_topic_name       = var.sns_topic_name
-
+  allowed_aws_services = [
+    "budgets.amazonaws.com",
+    "cloudwatch.amazonaws.com",
+    "cloudtrail.amazonaws.com",
+    "events.amazonaws.com",
+  ]
+  create_sns_topic = false
+  sns_topic_name   = "lza-cloudaccess-notifications"
 
   # consistent tags applied across all resources
   tags = {
-    Environment = "email-dev"
-    Mode        = "email subscription"
+    Environment = "Test"
+    Owner       = "DevOps"
+  }
+
+  slack = {
+    # slack webhook URL
+    webhook_url = "https://hooks.slack.com/services/XXXX"
   }
 
   # list of email address that will be subscribed
   email = {
-    addresses = var.email_addresses
+    addresses = []
   }
 }

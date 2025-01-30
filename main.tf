@@ -66,6 +66,7 @@ module "lambda_function" {
   create_package = true
 
   # Lambda settings 
+  architectures          = ["arm64"]
   ephemeral_storage_size = var.ephemeral_storage_size
   function_name          = var.function_name
   function_tags          = var.tags
@@ -95,6 +96,7 @@ module "lambda_function" {
   source_path = [
     {
       path             = "${path.module}/assets"
+      patterns         = ["!tests/*"]
       pip_requirements = false
     }
   ]

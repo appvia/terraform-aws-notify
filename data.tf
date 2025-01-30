@@ -21,14 +21,14 @@ data "aws_iam_policy_document" "current" {
   }
 
   dynamic "statement" {
-    for_each = var.allowed_aws_services
+    for_each = local.allowed_aws_services
 
     content {
-      sid    = "AllowService${index(var.allowed_aws_services, statement.value)}"
+      sid    = "AllowService${statement.value.name}"
       effect = "Allow"
       principals {
         type        = "Service"
-        identifiers = [statement.value]
+        identifiers = [statement.value.service]
       }
       actions = [
         "sns:Publish"
