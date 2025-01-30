@@ -7,6 +7,9 @@ locals {
   ## Indicates if we are enabling emails notifications
   enable_email = var.email != null ? true : false
 
+  ## Enable the notifications only if slack or teams are enabled 
+  enable_notifications = var.slack != null || var.teams != null ? true : false
+
   ## Expected sns topic arn, assuming we are not creating the sns topic
   expected_sns_topic_arn = format("arn:aws:sns:%s:%s:%s", local.region, local.account_id, var.sns_topic_name)
   ## Is the arn of the sns topic to use

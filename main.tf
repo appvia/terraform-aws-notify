@@ -36,18 +36,20 @@ resource "aws_sns_topic_subscription" "subscribers" {
 
 ## Add Lambda subscription to SNS topic
 resource "aws_sns_topic_subscription" "lambda" {
+  count     = local.enable_notifications ? 1 : 0
   topic_arn = local.sns_topic_arn
   protocol  = "lambda"
-  endpoint  = module.lambda_function.lambda_function_arn
+  endpoint  = module.lambda_function[0].lambda_function_arn
 
   depends_on = [module.sns, module.lambda_function]
 }
 
 ## Add permission for SNS to invoke Lambda
 resource "aws_lambda_permission" "sns" {
+  count         = local.enable_notifications ? 1 : 0
   statement_id  = "AllowSNSInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = module.lambda_function.lambda_function_name
+  function_name = module.lambda_function[0].lambda_function_name
   principal     = "sns.amazonaws.com"
   source_arn    = local.sns_topic_arn
 
@@ -55,6 +57,7 @@ resource "aws_lambda_permission" "sns" {
 }
 
 module "lambda_function" {
+  count   = local.enable_notifications ? 1 : 0
   source  = "terraform-aws-modules/lambda/aws"
   version = "7.20.1"
 
