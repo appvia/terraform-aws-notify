@@ -42,12 +42,6 @@ variable "cloudwatch_log_group_retention" {
   default     = 14
 }
 
-variable "create_cloudwatch_log_group" {
-  description = "Whether to create CloudWatch log group for Lambda function"
-  type        = bool
-  default     = true
-}
-
 variable "create_sns_topic" {
   description = "Whether to create an SNS topic for notifications"
   type        = bool
@@ -68,18 +62,6 @@ variable "email" {
     ])
     error_message = "Invalid email address"
   }
-}
-
-variable "enable_slack" {
-  description = "To send to slack, set to true"
-  type        = bool
-  default     = false
-}
-
-variable "enable_teams" {
-  description = "To send to teams, set to true"
-  type        = bool
-  default     = false
 }
 
 variable "ephemeral_storage_size" {
@@ -145,13 +127,6 @@ variable "slack" {
     # If filter policy provided this is the scope of that policy; either "MessageAttributes" (default) or "MessageBody"
   })
   default = null
-}
-
-variable "slack_webhook_url" {
-  description = "Webhook URL for Slack notifications"
-  type        = string
-  default     = ""
-  sensitive   = true
 }
 
 variable "sns_topic_name" {

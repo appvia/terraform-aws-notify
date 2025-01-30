@@ -4,7 +4,12 @@ from typing import Dict, Any
 from events import EventParser
 from formatters import SlackFormatter, TeamsFormatter
 from senders import SlackSender, TeamsSender
+import logging
 
+# Configure logging
+logger = logging.getLogger()
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+logger.setLevel(getattr(logging, log_level, logging.INFO))
 
 def get_notification_config():
     """
@@ -30,6 +35,8 @@ def get_notification_config():
         ValueError: If the platform is unsupported or if the required webhook URL is missing
     """
     platform = os.environ.get("NOTIFICATION_PLATFORM", "slack").lower()
+    logger.debug(f"Notification platform: {platform}")
+    
     if platform not in ["slack", "teams"]:
         raise ValueError(f"Unsupported notification platform: {platform}")
 
@@ -58,9 +65,13 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
     """
     Main Lambda handler to process various AWS events and send notifications
     """
+    logger.debug("Lambda handler started")
+    logger.debug(f"Received event: {json.dumps(event)}")
+    
     try:
         # Get notification configuration
         config = get_notification_config()
+        logger.debug(f"Using platform: {config['platform']}")
 
         # Validate platform
         if config["platform"] not in ["slack", "teams"]:
@@ -69,6 +80,7 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
         # Parse and normalize the event
         parser = EventParser()
         normalized_event = parser.parse_event(event)
+        logger.debug(f"Normalized event: {json.dumps(normalized_event)}")
 
         # Create appropriate formatter and sender based on platform
         if config["platform"] == "slack":
@@ -80,9 +92,12 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
 
         # Format the message
         message = formatter.format_message(normalized_event)
+        logger.debug(f"Formatted message: {json.dumps(message)}")
 
         # Send the message
+        logger.debug("Attempting to send message")
         success = sender.send_message(message)
+        logger.info(f"Message sent successfully: {success}")
 
         return {
             "statusCode": 200 if success else 500,
@@ -98,5 +113,5 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        print(f"Error processing event: {str(e)}")
+        logger.error(f"Error processing event: {str(e)}", exc_info=True)
         raise

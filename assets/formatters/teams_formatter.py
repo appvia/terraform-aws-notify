@@ -112,26 +112,159 @@ class TeamsFormatter(BaseFormatter):
         self, event: NormalizedEvent, event_type: EventType
     ) -> Dict[str, Any]:
         """Format CloudWatch specific events"""
-        # Implementation for CloudWatch alerts
-        pass
+        facts = [
+            {"name": "Severity", "value": event.severity},
+            {"name": "Metric", "value": event.details.get("metric_name", "N/A")},
+            {"name": "Namespace", "value": event.details.get("namespace", "N/A")},
+            {"name": "Region", "value": event.details.get("region", "N/A")},
+        ]
+
+        return {
+            "type": "message",
+            "attachments": [
+                {
+                    "contentType": "application/vnd.microsoft.card.adaptive",
+                    "content": {
+                        "type": "AdaptiveCard",
+                        "body": [
+                            {
+                                "type": "TextBlock",
+                                "size": "Large",
+                                "weight": "Bolder",
+                                "text": f"{event_type.emoji} CloudWatch Alert: {event.title}",
+                                "wrap": True,
+                            },
+                            {
+                                "type": "TextBlock",
+                                "text": event.description,
+                                "wrap": True,
+                            },
+                            {"type": "FactSet", "facts": facts},
+                        ],
+                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                        "version": "1.2",
+                    },
+                }
+            ],
+        }
 
     def _format_cost_anomaly(
         self, event: NormalizedEvent, event_type: EventType
     ) -> Dict[str, Any]:
         """Format Cost Anomaly specific events"""
-        # Implementation for Cost Anomaly alerts
-        pass
+        facts = [
+            {"name": "Impact", "value": event.details.get("impact", "N/A")},
+            {"name": "Service", "value": event.details.get("service", "N/A")},
+            {"name": "Account", "value": event.details.get("account", "N/A")},
+            {"name": "Region", "value": event.details.get("region", "N/A")},
+        ]
+
+        return {
+            "type": "message",
+            "attachments": [
+                {
+                    "contentType": "application/vnd.microsoft.card.adaptive",
+                    "content": {
+                        "type": "AdaptiveCard",
+                        "body": [
+                            {
+                                "type": "TextBlock",
+                                "size": "Large",
+                                "weight": "Bolder",
+                                "text": f"{event_type.emoji} Cost Anomaly Detected: {event.title}",
+                                "wrap": True,
+                            },
+                            {
+                                "type": "TextBlock",
+                                "text": event.description,
+                                "wrap": True,
+                            },
+                            {"type": "FactSet", "facts": facts},
+                        ],
+                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                        "version": "1.2",
+                    },
+                }
+            ],
+        }
 
     def _format_cloudtrail(
         self, event: NormalizedEvent, event_type: EventType
     ) -> Dict[str, Any]:
         """Format CloudTrail specific events"""
-        # Implementation for CloudTrail alerts
-        pass
+        facts = [
+            {"name": "Event Name", "value": event.details.get("event_name", "N/A")},
+            {"name": "User Identity", "value": event.details.get("user_identity", "N/A")},
+            {"name": "Region", "value": event.details.get("region", "N/A")},
+            {"name": "Source IP", "value": event.details.get("source_ip", "N/A")},
+        ]
+
+        return {
+            "type": "message",
+            "attachments": [
+                {
+                    "contentType": "application/vnd.microsoft.card.adaptive",
+                    "content": {
+                        "type": "AdaptiveCard",
+                        "body": [
+                            {
+                                "type": "TextBlock",
+                                "size": "Large",
+                                "weight": "Bolder",
+                                "text": f"{event_type.emoji} CloudTrail Activity: {event.title}",
+                                "wrap": True,
+                            },
+                            {
+                                "type": "TextBlock",
+                                "text": event.description,
+                                "wrap": True,
+                            },
+                            {"type": "FactSet", "facts": facts},
+                        ],
+                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                        "version": "1.2",
+                    },
+                }
+            ],
+        }
 
     def _format_budgets(
         self, event: NormalizedEvent, event_type: EventType
     ) -> Dict[str, Any]:
         """Format AWS Budgets specific events"""
-        # Implementation for Budget alerts
-        pass
+        facts = [
+            {"name": "Budget Name", "value": event.details.get("budget_name", "N/A")},
+            {"name": "Account", "value": event.details.get("account", "N/A")},
+            {"name": "Actual Spend", "value": event.details.get("actual_spend", "N/A")},
+            {"name": "Budgeted Amount", "value": event.details.get("budget_limit", "N/A")},
+            {"name": "Time Period", "value": event.details.get("time_period", "N/A")},
+        ]
+
+        return {
+            "type": "message",
+            "attachments": [
+                {
+                    "contentType": "application/vnd.microsoft.card.adaptive",
+                    "content": {
+                        "type": "AdaptiveCard",
+                        "body": [
+                            {
+                                "type": "TextBlock",
+                                "size": "Large",
+                                "weight": "Bolder",
+                                "text": f"{event_type.emoji} Budget Alert: {event.title}",
+                                "wrap": True,
+                            },
+                            {
+                                "type": "TextBlock",
+                                "text": event.description,
+                                "wrap": True,
+                            },
+                            {"type": "FactSet", "facts": facts},
+                        ],
+                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                        "version": "1.2",
+                    },
+                }
+            ],
+        }
