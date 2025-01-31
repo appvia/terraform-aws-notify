@@ -12,7 +12,6 @@ class EventType(Enum):
     GUARD_DUTY = ("🔒", "GuardDuty Alert")
     CLOUDWATCH = ("📊", "CloudWatch Alert")
     COST_ANOMALY = ("💰", "Cost Alert")
-    CLOUDTRAIL = ("🔧", "CloudTrail Alert")
     AWS_BUDGETS = ("💵", "Budget Alert")
     UNKNOWN = ("🚨", "Alert")
 
@@ -24,7 +23,6 @@ class EventType(Enum):
 # Mapping of AWS event types to our enum
 EVENT_TYPE_MAPPING: Dict[str, EventType] = {
     "aws_budgets": EventType.AWS_BUDGETS,
-    "cloudtrail": EventType.CLOUDTRAIL,
     "cloudwatch_alarm": EventType.CLOUDWATCH,
     "cost_anomaly": EventType.COST_ANOMALY,
     "guardduty": EventType.GUARD_DUTY,
