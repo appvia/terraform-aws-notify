@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, Any
-
+from .event_type import EventType
 
 @dataclass
 class NormalizedEvent:
@@ -22,7 +22,7 @@ class NormalizedEvent:
         raw_event (Dict[str, Any]): The original, unprocessed event
     """
 
-    event_type: str
+    event_type: EventType
     severity: str
     title: str
     region: str

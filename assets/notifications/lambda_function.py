@@ -93,7 +93,7 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
             sender = TeamsSender(config["teams_webhook_url"])
 
         # Format the message
-        message = formatter.format_message(normalized_event)
+        message = formatter.format(normalized_event)
         logger.debug("Formatted message: %s", json.dumps(message))
 
         # Send the message
