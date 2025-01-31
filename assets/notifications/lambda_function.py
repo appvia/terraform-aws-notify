@@ -81,7 +81,8 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
         # Parse and normalize the event
         parser = EventParser()
         normalized_event = parser.parse_event(event)
-        logger.debug("Normalized event: %s", json.dumps(normalized_event))
+        # Convert normalized_event to dict before logging
+        logger.debug("Normalized event: %s", json.dumps(normalized_event.to_dict()))
 
         # Create appropriate formatter and sender based on platform
         if config["platform"] == "slack":

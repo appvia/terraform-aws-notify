@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Callable
-from .event_types import EventType, EVENT_TYPE_MAPPING
-from events import NormalizedEvent
-
+from notifications.events import NormalizedEvent
+from notifications.events.event_type import EventType, EVENT_TYPE_MAPPING
 
 class BaseFormatter(ABC):
     """

@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from .base_formatter import BaseFormatter
-from .event_types import EventType
+from notifications.events.event_type import EventType
 from notifications.events import NormalizedEvent
 
 

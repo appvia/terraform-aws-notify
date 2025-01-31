@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, Tuple
+from typing import Dict
 
 
 class EventType(Enum):
@@ -9,6 +9,7 @@ class EventType(Enum):
     """
 
     SECURITY_HUB = ("🔒", "Security Alert")
+    GUARD_DUTY = ("🔒", "GuardDuty Alert")
     CLOUDWATCH = ("📊", "CloudWatch Alert")
     COST_ANOMALY = ("💰", "Cost Alert")
     CLOUDTRAIL = ("🔧", "CloudTrail Alert")
@@ -22,9 +23,10 @@ class EventType(Enum):
 
 # Mapping of AWS event types to our enum
 EVENT_TYPE_MAPPING: Dict[str, EventType] = {
-    "securityhub": EventType.SECURITY_HUB,
+    "aws_budgets": EventType.AWS_BUDGETS,
+    "cloudtrail": EventType.CLOUDTRAIL,
     "cloudwatch_alarm": EventType.CLOUDWATCH,
     "cost_anomaly": EventType.COST_ANOMALY,
-    "cloudtrail": EventType.CLOUDTRAIL,
-    "aws_budgets": EventType.AWS_BUDGETS,
+    "guardduty": EventType.GUARD_DUTY,
+    "securityhub": EventType.SECURITY_HUB,
 }

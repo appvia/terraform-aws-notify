@@ -25,8 +25,25 @@ class NormalizedEvent:
     event_type: str
     severity: str
     title: str
+    region: str
     description: str
     timestamp: datetime
     source: str
     details: Dict[str, Any]
     raw_event: Dict[str, Any]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert the normalized event to a dictionary suitable for JSON serialization.
+        """
+        return {
+            "event_type": str(self.event_type),
+            "severity": self.severity,
+            "title": self.title,
+            "region": self.region,
+            "description": self.description,
+            "timestamp": self.timestamp.isoformat(),
+            "source": self.source,
+            "details": self.details,
+            "raw_event": self.raw_event
+        }

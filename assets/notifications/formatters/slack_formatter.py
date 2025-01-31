@@ -1,7 +1,9 @@
 from typing import Dict, Any
 from .base_formatter import BaseFormatter
-from .event_types import EventType
 from notifications.events import NormalizedEvent
+from notifications.events.event_type import EventType
+from notifications.utils import format_key_name
+
 
 
 class SlackFormatter(BaseFormatter):
@@ -31,21 +33,25 @@ class SlackFormatter(BaseFormatter):
     ) -> Dict[str, Any]:
         """Route to specific formatter based on event type"""
         formatters = {
-            EventType.SECURITY_HUB: self._format_security_hub,
+            EventType.AWS_BUDGETS: self._format_budgets,
             EventType.CLOUDWATCH: self._format_cloudwatch,
             EventType.COST_ANOMALY: self._format_cost_anomaly,
-            EventType.CLOUDTRAIL: self._format_cloudtrail,
-            EventType.AWS_BUDGETS: self._format_budgets,
+            EventType.SECURITY_HUB: self._format_security_hub,
         }
 
         formatter = formatters.get(event_type, self._format_default)
+        
         return formatter(event, event_type)
 
     def _format_default(
         self, event: NormalizedEvent, event_type: EventType
     ) -> Dict[str, Any]:
         """Default formatter for unknown event types"""
-        details_text = "\n".join([f"• {k}: {v}" for k, v in event.details.items()])
+        # Format each detail key-value pair as a bullet point 
+        details_text = "\n".join([
+            f"• {format_key_name(k)}: {v}"
+            for k, v in event.details.items()
+        ])
 
         return {
             "blocks": [
@@ -61,10 +67,11 @@ class SlackFormatter(BaseFormatter):
                     "text": {
                         "type": "mrkdwn",
                         "text": (
-                            f"*Type:* {event_type.display_name}\n"
                             f"*Severity:* {event.severity}\n"
-                            f"*Source:* {event.source}\n\n"
-                            f"{event.description}"
+                            f"*Source:* {event.source}\n"
+                            + (f"*State:* {event.details.get('state')}\n" if event.details.get('state') else "")
+                            + (f"*Threshold:* {event.details.get('threshold')}\n" if event.details.get('threshold') else "")
+                            + f"\n{event.description}"
                         ),
                     },
                 },
@@ -196,54 +203,6 @@ class SlackFormatter(BaseFormatter):
                         "text": (
                             f"*Severity:* {event.severity}\n"
                             f"*Impact:* ${event.details.get('impact', '0')}\n\n"
-                            f"{event.description}"
-                        ),
-                    },
-                },
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": f"*Details:*\n{details_text}"},
-                },
-                {
-                    "type": "context",
-                    "elements": [
-                        {
-                            "type": "mrkdwn",
-                            "text": f"🕐 {event.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}",
-                        }
-                    ],
-                },
-            ]
-        }
-
-    def _format_cloudtrail(
-        self, event: NormalizedEvent, event_type: EventType
-    ) -> Dict[str, Any]:
-        """Format CloudTrail specific events"""
-        details_text = "\n".join([
-            f"• Event Name: {event.details.get('event_name', 'N/A')}",
-            f"• AWS Region: {event.details.get('aws_region', 'N/A')}",
-            f"• User Identity: {event.details.get('user_identity', 'N/A')}",
-            f"• Source IP: {event.details.get('source_ip', 'N/A')}",
-            f"• User Agent: {event.details.get('user_agent', 'N/A')}",
-        ])
-
-        return {
-            "blocks": [
-                {
-                    "type": "header",
-                    "text": {
-                        "type": "plain_text",
-                        "text": f"{event_type.emoji} API Activity Alert: {event.title}",
-                    },
-                },
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": (
-                            f"*Severity:* {event.severity}\n"
-                            f"*Event Source:* {event.details.get('event_source', 'N/A')}\n\n"
                             f"{event.description}"
                         ),
                     },

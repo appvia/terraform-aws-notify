@@ -2,6 +2,7 @@ from typing import Dict, Any
 import json
 from datetime import datetime
 from .normalized_event import NormalizedEvent
+from .event_type import EventType
 
 
 class EventParser:
@@ -12,32 +13,33 @@ class EventParser:
     """
 
     def __init__(self):
-        self._parser_cache = {}
+        self._parser_cache = {
+            EventType.AWS_BUDGETS: self._parse_aws_budgets, 
+            EventType.CLOUDWATCH: self._parse_cloudwatch_alarm,
+            EventType.COST_ANOMALY: self._parse_cost_anomaly,
+            EventType.SECURITY_HUB: self._parse_securityhub,
+            EventType.GUARD_DUTY: self._parse_guardduty,
+        }
 
     def parse_event(self, event: Dict[Any, Any]) -> NormalizedEvent:
-        """Parse event with proper timestamp validation"""
-        # Validate timestamp first
-        if "timestamp" not in event:
-            raise ValueError("Missing timestamp in event")
-            
-        try:
-            timestamp = datetime.fromisoformat(event["timestamp"].replace('Z', '+00:00'))
-        except (ValueError, AttributeError):
-            raise ValueError("Invalid timestamp format")
-
-        try:
-            event_type = self._determine_event_type(event)
-            
-            if event_type not in self._parser_cache:
-                parser_name = f"_parse_{event_type}"
-                self._parser_cache[event_type] = getattr(self, parser_name, self._parse_default)
-            
-            return self._parser_cache[event_type](event)
-            
-        except ValueError as e:
-            # Only catch event type determination errors
-            print(f"Warning: {str(e)}. Using default parser.")
+        event_type = self._determine_event_type(event)
+        
+        # step: we always use the default parser if the event type is not in the cache
+        if not event_type in self._parser_cache:
             return self._parse_default(event)
+        
+        return self._parser_cache[event_type](event)
+    
+    def _is_sns_event(self, event: Dict[Any, Any]) -> bool:
+        """Check if the event is an SNS event"""
+        if not "Records" in event or len(event["Records"]) <= 0:
+            return False
+        if not "EventSource" in event["Records"][0] or event["Records"][0]["EventSource"] != "aws:sns":
+           return False
+        if not "Sns" in event["Records"][0]:
+            return False
+        
+        return True
 
     def _determine_event_type(self, event: Dict[Any, Any]) -> str:
         """
@@ -52,29 +54,24 @@ class EventParser:
         Raises:
             ValueError: If the event type cannot be determined
         """
+        
         # Check if it's an SNS wrapped message
-        if "Records" in event and event["Records"][0]["EventSource"] == "aws:sns":
-            message = json.loads(event["Records"][0]["Sns"]["Message"])
-        else:
-            message = event
-
+        if not self._is_sns_event(event):
+            raise ValueError("Unknown event source, not aws:sns")
+        
+        message = json.loads(event["Records"][0]["Sns"]["Message"])
+        
         if "AlarmName" in message:
-            return "cloudwatch_alarm"
-        elif (
-            "detail-type" in message
-            and message["detail-type"] == "Security Hub Findings - Imported"
-        ):
-            return "securityhub"
-        elif "anomalyDetectorArn" in str(message):
-            return "cost_anomaly"
-        elif "budgetType" in str(message):
-            return "aws_budgets"
-        elif (
-            "detail-type" in message
-            and "AWS API Call via CloudTrail" in message["detail-type"]
-        ):
-            return "cloudtrail"
-
+            return EventType.CLOUDWATCH
+        elif message.get("source") == "aws.securityhub":
+            return EventType.SECURITY_HUB
+        elif message.get("source") == "aws.budgets":
+            return EventType.AWS_BUDGETS
+        elif message.get("source") == "aws.ce":
+            return EventType.COST_ANOMALY
+        elif message.get("source") == "aws.guardduty":
+            return EventType.GUARD_DUTY 
+        
         raise ValueError("Unknown event type")
 
     def _parse_default(self, event: Dict[Any, Any]) -> NormalizedEvent:
@@ -95,11 +92,15 @@ class EventParser:
         timestamp = self._extract_timestamp(message)
         severity = self._extract_severity(message)
         details = self._extract_details(message)
+        region = message.get("TopicArn", ":::unknown:::").split(":")[3]
+        subject = message.get("Subject")
 
         return NormalizedEvent(
             event_type="unknown",
             severity=severity,
+            subject=subject,
             title=title,
+            region=region,
             description=description,
             timestamp=timestamp,
             source=source,
@@ -274,9 +275,11 @@ class EventParser:
             NormalizedEvent: A normalized representation of the CloudWatch Alarm event
         """
         message = self._get_message_body(event)
+
         return NormalizedEvent(
-            event_type="cloudwatch_alarm",
+            event_type=EventType.CLOUDWATCH,
             severity="critical" if message.get("NewStateValue") == "ALARM" else "info",
+            region=message.get("Region", "unknown"),
             title=message.get("AlarmName", "Unknown Alarm"),
             description=message.get("AlarmDescription", "No description provided"),
             timestamp=datetime.fromisoformat(
@@ -287,7 +290,6 @@ class EventParser:
                 "reason": message.get("NewStateReason"),
                 "previous_state": message.get("OldStateValue"),
                 "current_state": message.get("NewStateValue"),
-                "region": message.get("Region"),
             },
             raw_event=event,
         )
@@ -303,10 +305,12 @@ class EventParser:
         Returns:
             NormalizedEvent: A normalized representation of the SecurityHub event
         """
-        finding = event["detail"]["findings"][0]
+        message = self._get_message_body(event)
+        finding = message["detail"]["findings"][0]
         return NormalizedEvent(
-            event_type="securityhub",
-            severity=finding.get("Severity", {}).get("Label", "UNKNOWN"),
+            event_type=EventType.SECURITY_HUB,
+            severity=finding.get("Severity", {}).get("Label", "UNKNOWN").lower(),
+            region=finding.get("Region"), 
             title=finding.get("Title"),
             description=finding.get("Description"),
             timestamp=datetime.fromisoformat(
@@ -322,14 +326,158 @@ class EventParser:
         )
 
     def _parse_cost_anomaly(self, event: Dict[Any, Any]) -> NormalizedEvent:
-        """Parse Cost Anomaly event"""
-        # Implementation needed
-        raise NotImplementedError("Cost Anomaly parsing not implemented")
+        """
+        Parse a Cost Anomaly event into a normalized format.
+        Extracts cost-specific information such as impact, root causes, and anomaly details.
+
+        Args:
+            event (Dict[Any, Any]): The Cost Anomaly event to parse
+
+        Returns:
+            NormalizedEvent: A normalized representation of the Cost Anomaly event
+        """
+        message = self._get_message_body(event)
+        detail = message.get("detail", {})
+        anomaly_details = detail.get("anomalyDetails", {})
+        
+        # Calculate total impact
+        total_impact = float(anomaly_details.get("totalImpact", 0))
+        
+        # Determine severity based on cost impact
+        severity = "low"
+        if total_impact >= 1000:
+            severity = "critical"
+        elif total_impact >= 100:
+            severity = "high"
+        elif total_impact >= 10:
+            severity = "medium"
+
+        return NormalizedEvent(
+            event_type=EventType.COST_ANOMALY,
+            severity=severity,
+            region=anomaly_details.get("region", "Unknown"),
+            title=f"Cost Anomaly: ${total_impact:,.2f} Impact Detected",
+            description=anomaly_details.get("rootCauses", ["No root cause identified"])[0],
+            timestamp=datetime.fromisoformat(
+                anomaly_details.get("anomalyStartTime").replace("Z", "+00:00")
+            ),
+            source="AWS Cost Anomaly Detection",
+            details={
+                "impact": total_impact,
+                "region": anomaly_details.get("region", "Unknown"),
+                "service": anomaly_details.get("service", "Unknown"),
+                "anomaly_end_time": anomaly_details.get("anomalyEndTime"),
+                "root_causes": anomaly_details.get("rootCauses", []),
+                "monitor_arn": detail.get("monitorArn"),
+            },
+            raw_event=event,
+        )
 
     def _parse_aws_budgets(self, event: Dict[Any, Any]) -> NormalizedEvent:
-        """Parse AWS Budgets event"""
-        # Implementation needed
-        raise NotImplementedError("AWS Budgets parsing not implemented")
+        """
+        Parse an AWS Budgets event into a normalized format.
+        Extracts budget-specific information such as threshold, actual/forecasted spend, and budget details.
+
+        Args:
+            event (Dict[Any, Any]): The AWS Budgets event to parse
+
+        Returns:
+            NormalizedEvent: A normalized representation of the AWS Budgets event
+        """
+        message = self._get_message_body(event)
+        
+        # Extract account ID from the budgetNotification
+        account_id = message.get("account")
+        
+        # Get budget details
+        detail = message.get("detail", {})
+        budget_name = detail.get("budgetName", "Unknown Budget")
+        actual_spend = float(detail.get("actualSpend", {}).get("amount", 0))
+        budget_limit = float(detail.get("budgetLimit", {}).get("amount", 0))
+        threshold = float(detail.get("thresholdExceeded", 0))
+        
+        # Calculate percentage of budget used
+        budget_percentage = (actual_spend / budget_limit * 100) if budget_limit > 0 else 0
+        
+        # Determine severity based on threshold
+        severity = "low"
+        if threshold >= 100:
+            severity = "critical"
+        elif threshold >= 90:
+            severity = "high"
+        elif threshold >= 80:
+            severity = "medium"
+
+        return NormalizedEvent(
+            event_type=EventType.AWS_BUDGETS,
+            severity=severity,
+            region=message.get("region"),
+            title=f"Budget Alert: {budget_name} at {threshold:.1f}% threshold",
+            description=f"Budget {budget_name} has reached {budget_percentage:.1f}% of limit (${actual_spend:,.2f} / ${budget_limit:,.2f})",
+            timestamp=datetime.fromisoformat(message.get("time").replace("Z", "+00:00")),
+            source="AWS Budgets",
+            details={
+                "account_id": account_id,
+                "budget_name": budget_name,
+                "actual_spend": actual_spend,
+                "budget_limit": budget_limit,
+                "threshold": threshold,
+                "time_unit": message.get("timeUnit"),
+                "notification_type": message.get("notificationType"),
+            },
+            raw_event=event,
+        )
+
+    def _parse_guardduty(self, event: Dict[Any, Any]) -> NormalizedEvent:
+        """
+        Parse a GuardDuty finding event into a normalized format.
+        Extracts security-specific information such as severity, findings details, and affected resources.
+
+        Args:
+            event (Dict[Any, Any]): The GuardDuty event to parse
+
+        Returns:
+            NormalizedEvent: A normalized representation of the GuardDuty event
+        """
+        
+        # Map GuardDuty severity levels to our severity levels
+        severity_mapping = {
+            1.0: "low",
+            2.0: "low",
+            3.0: "low",
+            4.0: "medium",
+            5.0: "medium",
+            6.0: "medium",
+            7.0: "high",
+            8.0: "high",
+            9.0: "critical",
+            10.0: "critical"
+        }
+        
+        message = self._get_message_body(event)
+        finding = message.get("detail", {})
+        severity = severity_mapping.get(finding.get("severity", 1.0), "low")
+        
+        return NormalizedEvent(
+            event_type=EventType.GUARD_DUTY,
+            severity=severity,
+            region=finding.get("region"),
+            title=finding.get("title", "Unknown GuardDuty Finding"),
+            description=finding.get("description", "No description provided"),
+            timestamp=datetime.fromisoformat(
+                finding.get("updatedAt", finding.get("createdAt")).replace("Z", "+00:00")
+            ),
+            source="GuardDuty",
+            details={
+                "finding_id": finding.get("id"),
+                "finding_type": finding.get("type"),
+                "region": finding.get("region"),
+                "account_id": finding.get("accountId"),
+                "resource_type": finding.get("resource", {}).get("resourceType"),
+                "resource_id": finding.get("resource", {}).get("resourceId"),
+            },
+            raw_event=event,
+        )
 
     def _get_message_body(self, event: Dict[Any, Any]) -> Dict[str, Any]:
         """
