@@ -65,7 +65,7 @@ module "lambda_function" {
   tags           = var.tags
   create_package = true
 
-  # Lambda settings 
+  # Lambda settings
   architectures          = ["arm64"]
   ephemeral_storage_size = var.ephemeral_storage_size
   function_name          = var.function_name
@@ -75,11 +75,11 @@ module "lambda_function" {
   runtime                = "python3.11"
   timeout                = var.timeout
 
-  # Policy settings  
+  # Policy settings
   attach_cloudwatch_logs_policy      = true
   attach_create_log_group_permission = true
 
-  # IAM settings 
+  # IAM settings
   create_role               = true
   role_description          = var.lambda_role_description
   role_tags                 = var.tags
@@ -101,7 +101,7 @@ module "lambda_function" {
     }
   ]
 
-  # Environment variables 
+  # Environment variables
   environment_variables = {
     NOTIFICATION_PLATFORM = try(var.notification_platform, null)
     SLACK_WEBHOOK_URL     = try(var.slack.webhook_url, null)
