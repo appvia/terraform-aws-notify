@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Dict, Any
 from .event_type import EventType
 
+
 @dataclass
 class NormalizedEvent:
     """
@@ -12,7 +13,8 @@ class NormalizedEvent:
     making them easier to process and format consistently.
 
     Attributes:
-        event_type (str): The type of AWS event (e.g., 'cloudwatch_alarm', 'securityhub')
+        event_type (str): The type of AWS event (e.g., 'cloudwatch_alarm',
+            'securityhub')
         severity (str): The severity level of the event
         title (str): A human-readable title for the event
         description (str): A detailed description of the event
@@ -45,5 +47,5 @@ class NormalizedEvent:
             "timestamp": self.timestamp.isoformat(),
             "source": self.source,
             "details": self.details,
-            "raw_event": self.raw_event
+            "raw_event": self.raw_event,
         }

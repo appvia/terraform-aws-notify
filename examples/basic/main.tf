@@ -26,7 +26,7 @@ module "notifications" {
 
   slack = {
     # slack webhook URL
-    webhook_url = "https://hooks.slack.com/services/XXXX"
+    webhook_url = "https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXX"
   }
 
   # list of email address that will be subscribed

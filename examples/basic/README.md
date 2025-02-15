@@ -24,10 +24,7 @@ No providers.
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_email_addresses"></a> [email\_addresses](#input\_email\_addresses) | A list of target email addresses | `list(string)` | n/a | yes |
-| <a name="input_sns_topic_name"></a> [sns\_topic\_name](#input\_sns\_topic\_name) | The name of the SNS topic to create | `string` | n/a | yes |
+No inputs.
 
 ## Outputs
 

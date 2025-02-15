@@ -4,24 +4,23 @@ from notifications.events.event_type import EventType
 from notifications.events import NormalizedEvent
 from notifications.utils import format_key_name
 
+
 class TeamsFormatter(BaseFormatter):
     """Formats messages for Microsoft Teams"""
 
-    def format(
-        self, event: NormalizedEvent
-    ) -> Dict[str, Any]:
+    def format(self, event: NormalizedEvent) -> Dict[str, Any]:
         """Route to specific formatter based on event type"""
         formatters = {
-            #EventType.SECURITY_HUB: self._format_security_hub,
-            #EventType.CLOUDWATCH: self._format_cloudwatch,
-            #EventType.COST_ANOMALY: self._format_cost_anomaly,
-            #EventType.CLOUDTRAIL: self._format_cloudtrail,
-            #EventType.AWS_BUDGETS: self._format_budgets,
+            # EventType.SECURITY_HUB: self._format_security_hub,
+            # EventType.CLOUDWATCH: self._format_cloudwatch,
+            # EventType.COST_ANOMALY: self._format_cost_anomaly,
+            # EventType.CLOUDTRAIL: self._format_cloudtrail,
+            # EventType.AWS_BUDGETS: self._format_budgets,
         }
-        
+
         event_type = event.event_type
         formatter = formatters.get(event_type, self._format_default)
-        
+
         return formatter(event, event_type)
 
     def _format_default(

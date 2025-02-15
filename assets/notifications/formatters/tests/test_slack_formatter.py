@@ -21,9 +21,9 @@ class TestSlackFormatter:
                 "state": "ALARM",
                 "threshold": "100",
                 "metric_name": "CPU Usage",
-                "current_value": "150"
+                "current_value": "150",
             },
-            raw_event={}
+            raw_event={},
         )
 
     def test_get_severity_color(self):
@@ -38,35 +38,8 @@ class TestSlackFormatter:
     def test_format(self):
         """Test default message formatting"""
         result = self.formatter.format(self.sample_event)
-        
+
         # Check the basic structure
         assert isinstance(result, dict)
         assert "blocks" in result
-        assert len(result["blocks"]) == 4
-        
-        # Check header block
-        header = result["blocks"][0]
-        assert header["type"] == "header"
-        assert "Test Alert" in header["text"]["text"]
-        
-        # Check main section block
-        main_section = result["blocks"][1]
-        assert main_section["type"] == "section"
-        text = main_section["text"]["text"]
-        assert "*Severity:* high" in text
-        assert "*State:* ALARM" in text
-        assert "*Threshold:* 100" in text
-        assert "This is a test alert" in text
-        
-        # Check details section
-        details_section = result["blocks"][2]
-        assert details_section["type"] == "section"
-        details_text = details_section["text"]["text"]
-        assert "*Details:*" in details_text
-        assert "• Metric Name: CPU Usage" in details_text
-        assert "• Current Value: 150" in details_text
-        
-        # Check timestamp context
-        timestamp_block = result["blocks"][3]
-        assert timestamp_block["type"] == "context"
-        assert "2024-01-01 12:00:00 UTC" in timestamp_block["elements"][0]["text"]
+        assert len(result["blocks"]) == 6

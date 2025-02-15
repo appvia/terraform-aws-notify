@@ -1,9 +1,9 @@
 import os
 import json
 from typing import Dict, Any
-from events import EventParser
-from formatters import SlackFormatter, TeamsFormatter
-from senders import SlackSender, TeamsSender
+from notifications.events import EventParser
+from notifications.formatters import SlackFormatter, TeamsFormatter
+from notifications.senders import SlackSender, TeamsSender
 import logging
 
 # Configure logging
@@ -76,7 +76,7 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
 
         # Validate platform
         if config["platform"] not in ["slack", "teams"]:
-            raise ValueError(f"Invalid platform: {config["platform"]}")
+            raise ValueError(f'Invalid platform: {config["platform"]}')
 
         # Parse and normalize the event
         parser = EventParser()

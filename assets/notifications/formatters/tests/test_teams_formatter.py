@@ -21,9 +21,9 @@ class TestTeamsFormatter:
                 "state": "ALARM",
                 "threshold": "100",
                 "metric_name": "CPU Usage",
-                "current_value": "150"
+                "current_value": "150",
             },
-            raw_event={}
+            raw_event={},
         )
 
     def test_format_default(self):
@@ -32,11 +32,11 @@ class TestTeamsFormatter:
 
         assert result["type"] == "message"
         assert len(result["attachments"]) == 1
-        
+
         content = result["attachments"][0]["content"]
         assert content["type"] == "AdaptiveCard"
         assert content["version"] == "1.2"
-        
+
         body = content["body"]
         print(body)
         assert body[0]["text"] == f"{EventType.CLOUDWATCH.emoji} Test Alert"
@@ -51,11 +51,10 @@ class TestTeamsFormatter:
         assert body[2]["facts"][3]["name"] == "Current Value"
         assert body[2]["facts"][3]["value"] == "150"
 
-
     def test_format_with_empty_details(self):
         """Test formatting when details are empty"""
         result = self.formatter.format(self.sample_event)
-        
+
         content = result["attachments"][0]["content"]
         facts = content["body"][2]["facts"]
         assert len(facts) == 4
@@ -63,7 +62,7 @@ class TestTeamsFormatter:
     def test_format_with_non_string_values(self):
         """Test formatting when details contain non-string values"""
         result = self.formatter.format(self.sample_event)
-        
+
         content = result["attachments"][0]["content"]
         facts = content["body"][2]["facts"]
         assert len(facts) == 4

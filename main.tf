@@ -70,7 +70,7 @@ module "lambda_function" {
   ephemeral_storage_size = var.ephemeral_storage_size
   function_name          = var.function_name
   function_tags          = var.tags
-  handler                = "lambda_function.lambda_handler"
+  handler                = "notifications.lambda_function.lambda_handler"
   memory_size            = var.memory_size
   runtime                = "python3.11"
   timeout                = var.timeout
@@ -95,9 +95,9 @@ module "lambda_function" {
 
   source_path = [
     {
-      path             = "${path.module}/assets/notifications"
-      patterns         = ["!tests/*"]
-      pip_requirements = false
+      path             = "${path.module}/assets/"
+      patterns         = ["!tests/*", "!.*\\__pycache__/.*", "!.*\\.pyc$"]
+      pip_requirements = "${path.module}/assets/notifications/requirements.txt"
     }
   ]
 
@@ -106,5 +106,6 @@ module "lambda_function" {
     NOTIFICATION_PLATFORM = try(var.notification_platform, null)
     SLACK_WEBHOOK_URL     = try(var.slack.webhook_url, null)
     TEAMS_WEBHOOK_URL     = try(var.teams.webhook_url, null)
+    LOG_LEVEL             = try(var.lambda_log_level, null)
   }
 }

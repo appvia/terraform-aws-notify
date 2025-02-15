@@ -3,6 +3,7 @@ from typing import Dict, Any, Callable
 from notifications.events import NormalizedEvent
 from notifications.events.event_type import EventType, EVENT_TYPE_MAPPING
 
+
 class BaseFormatter(ABC):
     """
     Base formatter class that implements the strategy pattern for formatting different event types.

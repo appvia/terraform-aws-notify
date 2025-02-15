@@ -5,7 +5,6 @@ from notifications.events.event_type import EventType
 from notifications.utils import format_key_name
 
 
-
 class SlackFormatter(BaseFormatter):
     """Formats messages for Slack"""
 
@@ -28,9 +27,7 @@ class SlackFormatter(BaseFormatter):
         }
         return severity_colors.get(severity.lower(), "#808080")
 
-    def format(
-        self, event: NormalizedEvent
-    ) -> Dict[str, Any]:
+    def format(self, event: NormalizedEvent) -> Dict[str, Any]:
         """Route to specific formatter based on event type"""
         # If you want to override an add a custom formatter, you can do so here
         # by adding a new key to the formatters dictionary
@@ -43,18 +40,17 @@ class SlackFormatter(BaseFormatter):
 
         event_type = event.event_type
         formatter = formatters.get(event_type, self._format_default)
-        
+
         return formatter(event, event_type)
 
     def _format_default(
         self, event: NormalizedEvent, event_type: EventType
     ) -> Dict[str, Any]:
         """Default formatter for unknown event types"""
-        # Format each detail key-value pair as a bullet point 
-        details_text = "\n".join([
-            f"• {format_key_name(k)}: {v}"
-            for k, v in event.details.items()
-        ])
+        # Format each detail key-value pair as a bullet point
+        details_text = "\n".join(
+            [f"• {format_key_name(k)}: {v}" for k, v in event.details.items()]
+        )
 
         return {
             "blocks": [
@@ -63,19 +59,40 @@ class SlackFormatter(BaseFormatter):
                     "text": {
                         "type": "plain_text",
                         "text": f"{event_type.emoji} {event.title}",
+                        "emoji": True,
                     },
+                },
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": (
+                                f"*Source:* {event.source}\n"
+                                f"*Severity:* {event.severity}\n"
+                                + (
+                                    f"*State:* {event.details.get('state')}\n"
+                                    if event.details.get("state")
+                                    else ""
+                                )
+                                + (
+                                    f"*Threshold:* {event.details.get('threshold')}\n"
+                                    if event.details.get("threshold")
+                                    else ""
+                                )
+                            ),
+                        }
+                    ],
                 },
                 {
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": (
-                            f"*Severity:* {event.severity}\n"
-                            + (f"*State:* {event.details.get('state')}\n" if event.details.get('state') else "")
-                            + (f"*Threshold:* {event.details.get('threshold')}\n" if event.details.get('threshold') else "")
-                            + f"\n{event.description}"
-                        ),
+                        "text": f"*Description:*\n{event.description}",
                     },
+                },
+                {
+                    "type": "divider",
                 },
                 {
                     "type": "section",

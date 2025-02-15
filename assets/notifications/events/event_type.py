@@ -9,22 +9,34 @@ class EventType(Enum):
     """
 
     SECURITY_HUB = ("🔒", "Security Alert")
-    GUARD_DUTY = ("🔒", "GuardDuty Alert")
+    GUARDDUTY = ("🔒", "GuardDuty Alert")
     CLOUDWATCH = ("📊", "CloudWatch Alert")
-    COST_ANOMALY = ("💰", "Cost Alert")
-    AWS_BUDGETS = ("💵", "Budget Alert")
+    CLOUDWATCH_EVENTBRIDGE = ("📊", "CloudWatch EventBridge Alert")
+    KMS_DELETION = ("🔑", "KMS Deletion Alert")
     UNKNOWN = ("🚨", "Alert")
 
     def __init__(self, emoji: str, display_name: str):
         self.emoji = emoji
         self.display_name = display_name
 
+class Severity(Enum):
+    """
+    Enumeration of supported severity levels and their display properties.
+    Each severity level has an associated emoji and display name.
+    """ 
+    
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    INFO = "info"
+    UNKNOWN = "unknown"
+    
 
 # Mapping of AWS event types to our enum
 EVENT_TYPE_MAPPING: Dict[str, EventType] = {
-    "aws_budgets": EventType.AWS_BUDGETS,
     "cloudwatch_alarm": EventType.CLOUDWATCH,
-    "cost_anomaly": EventType.COST_ANOMALY,
-    "guardduty": EventType.GUARD_DUTY,
+    "guardduty": EventType.GUARDDUTY,
+    "kms_deletion": EventType.KMS_DELETION,
     "securityhub": EventType.SECURITY_HUB,
 }

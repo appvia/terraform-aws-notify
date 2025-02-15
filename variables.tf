@@ -76,6 +76,12 @@ variable "function_name" {
   default     = "lz-notifications"
 }
 
+variable "lambda_log_level" {
+  description = "The log level for the Lambda function"
+  type        = string
+  default     = "INFO"
+}
+
 variable "lambda_role_description" {
   description = "Description of the IAM role for the Lambda function"
   type        = string

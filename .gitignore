@@ -49,6 +49,7 @@ terraform.rc
 .terraform.lock.hcl
 crash.log
 crash.*.log
+builds/
 
 # IDE
 .idea/
@@ -75,4 +76,4 @@ local_test/
 
 # Logs
 *.log
-logs/ 
+logs/
