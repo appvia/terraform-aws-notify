@@ -122,15 +122,8 @@ variable "slack" {
     lambda_name = optional(string, "slack-notify")
     # The name of the lambda function to create
     lambda_description = optional(string, "Lambda function to send slack notifications")
-    # The description for the slack lambda
-    secret_name = optional(string)
     # An optional secret name in secrets manager to use for the slack configuration
     webhook_url = optional(string)
-    # The webhook url to post to
-    filter_policy = optional(string)
-    # An optional SNS subscription filter policy to apply
-    filter_policy_scope = optional(string)
-    # If filter policy provided this is the scope of that policy; either "MessageAttributes" (default) or "MessageBody"
   })
   default = null
 }
@@ -178,15 +171,8 @@ variable "teams" {
     lambda_name = optional(string, "teams-notify")
     # The name of the lambda function to create
     lambda_description = optional(string, "Lambda function to send teams notifications")
-    # The description for the teams lambda
-    secret_name = optional(string)
     # An optional secret name in secrets manager to use for the slack configuration
     webhook_url = optional(string)
-    # The webhook url to post to
-    filter_policy = optional(string)
-    # An optional SNS subscription filter policy to apply
-    filter_policy_scope = optional(string)
-    # If filter policy provided this is the scope of that policy; either "MessageAttributes" (default) or "MessageBody"
   })
   default = null
 }
