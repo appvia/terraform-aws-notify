@@ -83,7 +83,7 @@ module "lambda_function" {
   create_role               = true
   role_description          = var.lambda_role_description
   role_tags                 = var.tags
-  role_name                 = var.lambda_role_name
+  role_name                 = local.lambda_role_name
   role_permissions_boundary = var.lambda_role_permissions_boundary
 
   # Cloudwatch settings

@@ -24,4 +24,7 @@ locals {
       service = service
     }
   ]
+
+  ## The name of the lambda role 
+  lambda_role_name = var.lambda_role_name != null ? var.lambda_role_name : "lz-notifications-${local.region}"
 }
