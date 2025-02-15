@@ -1,5 +1,6 @@
 <!-- markdownlint-disable -->
-<a href="https://www.appvia.io/"><img src="https://github.com/appvia/terraform-aws-notifications/blob/main/docs/appvia_banner.jpg?raw=true" alt="Appvia Banner"/></a><br/><p align="right"> <a href="https://registry.terraform.io/modules/appvia/notifications/aws/latest"><img src="https://img.shields.io/static/v1?label=APPVIA&message=Terraform%20Registry&color=191970&style=for-the-badge" alt="Terraform Registry"/></a></a> <a href="https://github.com/appvia/terraform-aws-notifications/releases/latest"><img src="https://img.shields.io/github/release/appvia/terraform-aws-notifications.svg?style=for-the-badge&color=006400" alt="Latest Release"/></a> <a href="https://appvia-community.slack.com/join/shared_invite/zt-1s7i7xy85-T155drryqU56emm09ojMVA#/shared-invite/email"><img src="https://img.shields.io/badge/Slack-Join%20Community-purple?style=for-the-badge&logo=slack" alt="Slack Community"/></a> <a href="https://github.com/appvia/terraform-aws-notifications/graphs/contributors"><img src="https://img.shields.io/github/contributors/appvia/terraform-aws-notifications.svg?style=for-the-badge&color=FF8C00" alt="Contributors"/></a>
+
+<a href="https://www.appvia.io/"><img src="https://github.com/appvia/terraform-aws-notify/blob/main/docs/appvia_banner.jpg?raw=true" alt="Appvia Banner"/></a><br/><p align="right"> <a href="https://registry.terraform.io/modules/appvia/notify/aws/latest"><img src="https://img.shields.io/static/v1?label=APPVIA&message=Terraform%20Registry&color=191970&style=for-the-badge" alt="Terraform Registry"/></a></a> <a href="https://github.com/appvia/terraform-aws-notify/releases/latest"><img src="https://img.shields.io/github/release/appvia/terraform-aws-notify.svg?style=for-the-badge&color=006400" alt="Latest Release"/></a> <a href="https://appvia-community.slack.com/join/shared_invite/zt-1s7i7xy85-T155drryqU56emm09ojMVA#/shared-invite/email"><img src="https://img.shields.io/badge/Slack-Join%20Community-purple?style=for-the-badge&logo=slack" alt="Slack Community"/></a> <a href="https://github.com/appvia/terraform-aws-notify/graphs/contributors"><img src="https://img.shields.io/github/contributors/appvia/terraform-aws-notify.svg?style=for-the-badge&color=FF8C00" alt="Contributors"/></a>
 
 <!-- markdownlint-restore -->
 <!--
@@ -8,7 +9,7 @@
 
 ![Github Actions](https://github.com/appvia/terraform-aws-notifications/actions/workflows/terraform.yml/badge.svg)
 
-# Terraform AWS Notifications
+# Terraform AWS Notify
 
 ## Description
 
@@ -18,31 +19,32 @@ The purpose of this module is to provide a building block for processing and del
 
 ```hcl
 module "notifications" {
-  source = "github.com/appvia/terraform-aws-notify?ref=main"
+  source = "../.."
 
-  allowed_aws_services = ["cloudwatch.amazonaws.com"]
-  create_sns_topic     = true
-  sns_topic_name       = var.sns_topic_name
-  tags                 = var.tags
+  # creates the SNS topic of the given name, and allows CloudWatch service to post to topic
+  allowed_aws_services = [
+    "budgets.amazonaws.com",
+    "cloudwatch.amazonaws.com",
+    "cloudtrail.amazonaws.com",
+    "events.amazonaws.com",
+  ]
+  create_sns_topic = false
+  sns_topic_name   = "lza-cloudaccess-notifications"
 
-  subscribers = {
-    "opsgenie" = {
-      protocol               = "https"
-      endpoint               = "https://api.opsgenie.com/v2/alerts"
-      endpoint_auto_confirms = true
-      raw_message_delivery   = true
-    }
+  # consistent tags applied across all resources
+  tags = {
+    Environment = "Test"
+    Owner       = "DevOps"
   }
 
-  email = {
-    addresses = var.email_addresses
-  }
-
-  teams = {
-    webhook_url = var.teams_webhook
-  }
   slack = {
-    webhook_url = var.slack_webhook
+    # slack webhook URL
+    webhook_url = "https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXX"
+  }
+
+  # list of email address that will be subscribed
+  email = {
+    addresses = []
   }
 }
 ```
@@ -54,16 +56,6 @@ The `terraform-docs` utility is used to generate this README. Follow the below s
 1. Make changes to the `.terraform-docs.yml` file
 2. Fetch the `terraform-docs` binary (<https://terraform-docs.io/user-guide/installation/>)
 3. Run `terraform-docs markdown table --output-file ${PWD}/README.md --output-mode inject .`
-
-## Using Secrets Manager
-
-The `slack` configuration can be sourced from AWS Secrets Manager, using the `var.slack.secret_name`. The secret should be a JSON object reassembling the `slack` configuration.
-
-```json
-{
-  "webhook_url": "https://hooks.slack.com/services/..."
-}
-```
 
 ## Maintenance
 
