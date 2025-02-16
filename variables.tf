@@ -85,7 +85,7 @@ variable "lambda_log_level" {
 variable "lambda_role_description" {
   description = "Description of the IAM role for the Lambda function"
   type        = string
-  default     = "IAM role for Lambda function"
+  default     = "Used by the notifications lambda to forward alarms on to slack or teams"
 }
 
 variable "lambda_role_name" {
@@ -97,7 +97,7 @@ variable "lambda_role_name" {
 variable "lambda_runtime" {
   description = "The runtime to use for the Lambda function"
   type        = string
-  default     = "python3.12"
+  default     = "python3.13"
 }
 
 variable "lambda_role_permissions_boundary" {
