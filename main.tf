@@ -78,6 +78,7 @@ module "lambda_function" {
   # Policy settings
   attach_cloudwatch_logs_policy      = true
   attach_create_log_group_permission = true
+  attach_tracing_policy              = true
 
   # IAM settings
   create_role               = true
