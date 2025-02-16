@@ -21,12 +21,13 @@ module "notifications" {
   # consistent tags applied across all resources
   tags = {
     Environment = "Test"
-    Owner       = "DevOps"
+    Owner       = "Engineering"
+    Product     = "LandingZone"
   }
 
   slack = {
     # slack webhook URL
-    webhook_url = "https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXX"
+    webhook_url = var.slack_webhook_url
   }
 
   # list of email address that will be subscribed

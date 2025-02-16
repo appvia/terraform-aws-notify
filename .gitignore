@@ -51,6 +51,9 @@ crash.log
 crash.*.log
 builds/
 
+# Tesging
+appvia.tfvars
+
 # IDE
 .idea/
 .vscode/
