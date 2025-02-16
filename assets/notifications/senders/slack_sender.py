@@ -1,4 +1,6 @@
-import requests
+import json
+import urllib.request
+import urllib.error
 from typing import Dict, Any
 from .base_sender import MessageSender
 
@@ -35,13 +37,15 @@ class SlackSender(MessageSender):
             }
         """
         try:
-            response = requests.post(
+            data = json.dumps(message).encode('utf-8')
+            req = urllib.request.Request(
                 self.webhook_url,
-                json=message,
-                headers={"Content-Type": "application/json"},
+                data=data,
+                method='POST',
+                headers={'Content-Type': 'application/json'}
             )
-            response.raise_for_status()
-            return True
-        except Exception as e:
+            with urllib.request.urlopen(req) as response:
+                return response.status == 200
+        except (urllib.error.URLError, urllib.error.HTTPError) as e:
             print(f"Error sending message to Slack: {str(e)}")
             return False
