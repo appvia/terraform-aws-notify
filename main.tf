@@ -95,9 +95,8 @@ module "lambda_function" {
 
   source_path = [
     {
-      path             = "${path.module}/assets/"
-      patterns         = ["!tests/*", "!.*\\__pycache__/.*", "!.*\\.pyc$"]
-      pip_requirements = "${path.module}/assets/notifications/requirements.txt"
+      path     = "${path.module}/assets/"
+      patterns = ["!tests/*", "!.*\\__pycache__/.*", "!.*\\.pyc$"]
     }
   ]
 
