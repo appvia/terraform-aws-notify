@@ -94,6 +94,12 @@ variable "lambda_role_name" {
   default     = null
 }
 
+variable "lambda_runtime" {
+  description = "The runtime to use for the Lambda function"
+  type        = string
+  default     = "python3.12"
+}
+
 variable "lambda_role_permissions_boundary" {
   description = "ARN of the permissions boundary to be used on the Lambda IAM role"
   type        = string

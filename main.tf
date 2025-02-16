@@ -72,7 +72,7 @@ module "lambda_function" {
   function_tags          = var.tags
   handler                = "notifications.lambda_function.lambda_handler"
   memory_size            = var.memory_size
-  runtime                = "python3.11"
+  runtime                = var.lambda_runtime
   timeout                = var.timeout
 
   # Policy settings
