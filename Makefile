@@ -12,7 +12,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-.PHONY: all security lint format documentation documentation-examples validate-all validate validate-examples init examples tests test install-dev
+.PHONY: all security lint format documentation documentation-examples validate-all validate validate-examples init examples tests
 
 default: all
 
@@ -42,7 +42,7 @@ documentation:
 
 documentation-modules:
 	@echo "--> Generating documentation for modules"
-	@find . -type d -regex '.*/modules/[a-za-z\-_$$]*' -not -path '*.terraform*' 2>/dev/null | while read -r dir; do \
+	@find . -type d -regex '.*/modules/[a-za-z\-\_]*' -not -path '*.terraform*' 2>/dev/null | while read -r dir; do \
 		echo "--> Generating documentation for module: $$dir"; \
 		terraform-docs $$dir; \
 	done;
@@ -70,6 +70,10 @@ upgrade-terraform-example-providers:
 init:
 	@echo "--> Running terraform init"
 	@terraform init -backend=false
+	@find . -type f -name "*.tf" -not -path '*.terraform*' -exec dirname {} \; | sort -u | while read -r dir; do \
+		echo "--> Running terraform init in $$dir"; \
+		terraform -chdir=$$dir init -backend=false; \
+	done;
 
 security: init
 	@echo "--> Running Security checks"
@@ -107,7 +111,7 @@ validate:
 
 validate-modules:
 	@echo "--> Running terraform validate on modules"
-	@find . -type d -regex '.*/modules/[a-zA-Z\-_$$]*' -not -path '*.terraform*' 2>/dev/null | while read -r dir; do \
+	@find . -type d -regex './modules/[a-zA-Z\-]*' -not -path '*.terraform*' 2>/dev/null | while read -r dir; do \
 		echo "--> Validating Module $$dir"; \
 		terraform -chdir=$$dir init -backend=false; \
 		terraform -chdir=$$dir validate; \
@@ -159,11 +163,3 @@ clean:
 		echo "--> Removing $$dir"; \
 		rm -rf $$dir; \
 	done
-	@find . -type .pytest_cache -name ".pytest_cache" 2>/dev/null | while read -r dir; do \
-		echo "--> Removing $$dir"; \
-		rm -rf $$dir; \
-	done
-	@find . -name __pycache__ -type d -exec rm -rf {} +
-
-notifications-tests:
-	pytest assets/notifications -v

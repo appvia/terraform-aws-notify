@@ -3,7 +3,7 @@ locals {
   ## The current account id
   account_id = data.aws_caller_identity.current.account_id
   ## The current region
-  region = data.aws_region.current.name
+  region = data.aws_region.current.region
   ## Indicates if we are enabling emails notifications
   enable_email = var.email != null ? true : false
 
