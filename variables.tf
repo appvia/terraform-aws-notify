@@ -112,16 +112,6 @@ variable "memory_size" {
   default     = 128
 }
 
-variable "notification_platform" {
-  description = "Platform to send notifications to (slack or teams)"
-  type        = string
-  default     = "slack"
-  validation {
-    condition     = contains(["slack", "teams"], var.notification_platform)
-    error_message = "notification_platform must be either 'slack' or 'teams'"
-  }
-}
-
 variable "slack" {
   description = "The configuration for Slack notifications"
   type = object({

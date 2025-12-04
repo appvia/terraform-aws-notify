@@ -1,9 +1,11 @@
 import os
 import json
+import boto3
 from typing import Dict, Any
 from notifications.events import EventParser
 from notifications.formatters import SlackFormatter, TeamsFormatter
 from notifications.senders import SlackSender, TeamsSender
+from notifications.utils.secrets import get_secret
 import logging
 
 # Configure logging
@@ -47,10 +49,10 @@ def get_notification_config():
     # Validate webhook URL based on platform
     webhook_url = os.environ.get("WEBHOOK_URL", "")
     webhook_arn = os.environ.get("WEBHOOK_ARN", "")
-    
+
     if not webhook_url and not webhook_arn:
         raise ValueError("Missing WEBHOOK_URL or WEBHOOK_ARN environment variable")
-    
+
     return {
         "platform": platform,
         "webhook_url": webhook_url,
@@ -72,22 +74,22 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
         # Validate platform
         if config["platform"] not in ["slack", "teams"]:
             raise ValueError(f'Invalid platform: {config["platform"]}')
-        
+
         webhook_url = config["webhook_url"]
-        
+
         # If the webhook ARN is present, we need to retrieve the secret from the ARN
         if config["webhook_arn"] != "":
             logger.info("Retrieving webhook URL from secret: %s", config["webhook_arn"])
-            
+
             client = boto3.client('secretsmanager')
             secret = get_secret(client, config["webhook_arn"])
-            
+
             # Check if the secret is empty or the webhook URL is not present
             if secret is None or secret["webhook_url"] == "":
                 raise ValueError(f"Secret {config['webhook_arn']} is empty")
-            
+
             webhook_url = secret["webhook_url"]
-        
+
         # Parse and normalize the event
         parser = EventParser()
         normalized_event = parser.parse_event(event)

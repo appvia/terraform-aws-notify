@@ -15,8 +15,10 @@ module "notifications" {
     "cloudtrail.amazonaws.com",
     "events.amazonaws.com",
   ]
-  create_sns_topic = false
-  sns_topic_name   = "lza-cloudaccess-notifications"
+  create_sns_topic = true
+  lambda_role_name = "lza-notifications-test"
+  function_name    = "lza-notifications-test"
+  sns_topic_name   = "lza-notifications-test"
 
   # consistent tags applied across all resources
   tags = {
@@ -27,7 +29,8 @@ module "notifications" {
 
   slack = {
     # slack webhook URL
-    webhook_url = var.slack_webhook_url
+    #webhook_url = var.slack_webhook_url
+    webhook_arn = "arn:aws:secretsmanager:eu-west-2:390403866963:secret:webhook-test-wN261F"
   }
 
   # list of email address that will be subscribed

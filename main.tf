@@ -76,6 +76,7 @@ module "lambda_function" {
   timeout                = var.timeout
 
   # Policy settings
+  attach_policy_statements           = true
   attach_cloudwatch_logs_policy      = true
   attach_create_log_group_permission = true
   attach_tracing_policy              = true
@@ -93,6 +94,33 @@ module "lambda_function" {
   cloudwatch_logs_log_group_class   = var.cloudwatch_log_group_class
   cloudwatch_logs_tags              = var.tags
   cloudwatch_logs_kms_key_id        = var.cloudwatch_log_group_kms_key_id
+
+  policy_statements = merge(
+    {
+      sns = {
+        sid       = "AllowSTS"
+        actions   = ["sts:GetCallerIdentity"]
+        resources = ["*"]
+        effect    = "Allow"
+      }
+    },
+    try(var.slack.webhook_arn, null) != null ? {
+      secrets_manager = {
+        sid       = "AllowSlackSecretsManagerAccess"
+        actions   = ["secretsmanager:GetSecretValue"]
+        resources = [var.slack.webhook_arn]
+        effect    = "Allow"
+      }
+    } : {},
+    try(var.teams.webhook_arn, null) != null ? {
+      secrets_manager = {
+        sid       = "AllowTeamsSecretsManagerAccess"
+        actions   = ["secretsmanager:GetSecretValue"]
+        resources = [var.teams.webhook_arn]
+        effect    = "Allow"
+      }
+    } : {},
+  )
 
   source_path = [
     {
