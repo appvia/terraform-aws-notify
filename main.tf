@@ -99,9 +99,21 @@ module "lambda_function" {
     {
       sns = {
         sid       = "AllowSTS"
+        effect    = "Allow"
         actions   = ["sts:GetCallerIdentity"]
         resources = ["*"]
-        effect    = "Allow"
+      }
+      kms = {
+        sid    = "AllowKMSDecrypt"
+        effect = "Allow"
+        actions = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        resources = ["*"]
       }
     },
     try(var.slack.webhook_arn, null) != null ? {
