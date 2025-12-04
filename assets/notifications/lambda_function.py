@@ -24,13 +24,15 @@ def get_notification_config():
     Environment Variables:
         NOTIFICATION_PLATFORM: The platform to use ('slack' or 'teams)
         SLACK_WEBHOOK_URL: Required webhook URL if platform is 'slack'
+        SLACK_WEBHOOK_ARN: Optional ARN for the Slack webhook secret
         TEAMS_WEBHOOK_URL: Required webhook URL if platform is 'teams'
+        TEAMS_WEBHOOK_ARN: Optional ARN for the Teams webhook secret
 
     Returns:
         dict: Configuration dictionary containing:
             - platform: str - The selected notification platform
-            - slack_webhook_url: str - The Slack webhook URL
-            - teams_webhook_url: str - The Teams webhook URL
+            - webhook_url: str - The webhook URL
+            - webhook_arn: str - The webhook ARN
 
     Raises:
         ValueError: If the platform is unsupported or if the required webhook
@@ -43,24 +45,17 @@ def get_notification_config():
         raise ValueError(f"Unsupported notification platform: {platform}")
 
     # Validate webhook URL based on platform
-    if platform == "slack":
-        slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL", "")
-        if not slack_webhook_url:
-            raise ValueError("Missing SLACK_WEBHOOK_URL environment variable")
-        teams_webhook_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
-    else:  # platform == "teams"
-        teams_webhook_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
-        if not teams_webhook_url:
-            raise ValueError("Missing TEAMS_WEBHOOK_URL environment variable")
-        slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL", "")
-
-    config = {
+    webhook_url = os.environ.get("WEBHOOK_URL", "")
+    webhook_arn = os.environ.get("WEBHOOK_ARN", "")
+    
+    if not webhook_url and not webhook_arn:
+        raise ValueError("Missing WEBHOOK_URL or WEBHOOK_ARN environment variable")
+    
+    return {
         "platform": platform,
-        "slack_webhook_url": slack_webhook_url,
-        "teams_webhook_url": teams_webhook_url,
+        "webhook_url": webhook_url,
+        "webhook_arn": webhook_arn,
     }
-
-    return config
 
 
 def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
@@ -77,7 +72,22 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
         # Validate platform
         if config["platform"] not in ["slack", "teams"]:
             raise ValueError(f'Invalid platform: {config["platform"]}')
-
+        
+        webhook_url = config["webhook_url"]
+        
+        # If the webhook ARN is present, we need to retrieve the secret from the ARN
+        if config["webhook_arn"] != "":
+            logger.info("Retrieving webhook URL from secret: %s", config["webhook_arn"])
+            
+            client = boto3.client('secretsmanager')
+            secret = get_secret(client, config["webhook_arn"])
+            
+            # Check if the secret is empty or the webhook URL is not present
+            if secret is None or secret["webhook_url"] == "":
+                raise ValueError(f"Secret {config['webhook_arn']} is empty")
+            
+            webhook_url = secret["webhook_url"]
+        
         # Parse and normalize the event
         parser = EventParser()
         normalized_event = parser.parse_event(event)
@@ -87,10 +97,10 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
         # Create appropriate formatter and sender based on platform
         if config["platform"] == "slack":
             formatter = SlackFormatter()
-            sender = SlackSender(config["slack_webhook_url"])
+            sender = SlackSender(webhook_url)
         else:  # teams
             formatter = TeamsFormatter()
-            sender = TeamsSender(config["teams_webhook_url"])
+            sender = TeamsSender(webhook_url)
 
         # Format the message
         message = formatter.format(normalized_event)

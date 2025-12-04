@@ -130,6 +130,8 @@ variable "slack" {
     lambda_description = optional(string, "Lambda function to send slack notifications")
     # An optional secret name in secrets manager to use for the slack configuration
     webhook_url = optional(string)
+    # An optional ARN for a secret in secrets manager containing the webhook url details
+    webhook_arn = optional(string, null)
   })
   default = null
 }
@@ -179,6 +181,8 @@ variable "teams" {
     lambda_description = optional(string, "Lambda function to send teams notifications")
     # An optional secret name in secrets manager to use for the slack configuration
     webhook_url = optional(string)
+    # An optional ARN for a secret in secrets manager containing the webhook url details
+    webhook_arn = optional(string, null)
   })
   default = null
 }

@@ -12,7 +12,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-.PHONY: all security lint format documentation documentation-examples validate-all validate validate-examples init examples tests
+.PHONY: all security lint format documentation documentation-examples validate-all validate validate-examples init examples tests test-python
 
 default: all
 
@@ -20,6 +20,7 @@ all:
 	$(MAKE) init
 	$(MAKE) validate
 	$(MAKE) tests
+	$(MAKE) test-python
 	$(MAKE) lint
 	$(MAKE) security
 	$(MAKE) format
@@ -100,6 +101,18 @@ security-examples:
 tests:
 	@echo "--> Running Terraform Tests"
 	@terraform test
+
+test-python:
+	@echo "--> Running Python Tests"
+	@if [ ! -d venv ]; then \
+		echo "--> Creating virtual environment"; \
+		python3 -m venv venv; \
+	fi
+	@echo "--> Installing Python dependencies"
+	@venv/bin/pip install -q --upgrade pip
+	@venv/bin/pip install -q -r requirements.txt
+	@echo "--> Running pytest"
+	@venv/bin/pytest assets/notifications/ -v
 
 validate:
 	@echo "--> Running terraform validate"

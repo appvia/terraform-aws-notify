@@ -102,10 +102,19 @@ module "lambda_function" {
   ]
 
   # Environment variables
-  environment_variables = {
-    NOTIFICATION_PLATFORM = try(var.notification_platform, null)
-    SLACK_WEBHOOK_URL     = try(var.slack.webhook_url, null)
-    TEAMS_WEBHOOK_URL     = try(var.teams.webhook_url, null)
-    LOG_LEVEL             = try(var.lambda_log_level, null)
-  }
+  environment_variables = merge(
+    var.slack != null ? {
+      NOTIFICATION_PLATFORM = "slack"
+      WEBHOOK_URL           = try(var.slack.webhook_url, null)
+      WEBHOOK_ARN           = try(var.slack.webhook_arn, null)
+    } : {},
+    var.teams != null ? {
+      NOTIFICATION_PLATFORM = "teams"
+      WEBHOOK_URL           = try(var.teams.webhook_url, null)
+      WEBHOOK_ARN           = try(var.teams.webhook_arn, null)
+    } : {},
+    {
+      LOG_LEVEL = try(var.lambda_log_level, null)
+    }
+  )
 }

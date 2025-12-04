@@ -28,7 +28,7 @@ class TestLambdaFunction:
         original_environ = dict(os.environ)
 
         # Configure environment to use our test server
-        os.environ["SLACK_WEBHOOK_URL"] = httpserver.url_for("/")
+        os.environ["WEBHOOK_URL"] = httpserver.url_for("/")
         os.environ["NOTIFICATION_PLATFORM"] = "slack"
 
         # Configure server to capture Slack messages

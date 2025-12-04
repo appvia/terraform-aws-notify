@@ -57,6 +57,114 @@ The `terraform-docs` utility is used to generate this README. Follow the below s
 2. Fetch the `terraform-docs` binary (<https://terraform-docs.io/user-guide/installation/>)
 3. Run `terraform-docs markdown table --output-file ${PWD}/README.md --output-mode inject .`
 
+## Development
+
+### Python Code Structure
+
+The Lambda function code is located in `assets/notifications/` and follows a modular architecture:
+
+```
+assets/notifications/
+├── lambda_function.py          # Main Lambda entry point
+├── events/                      # Event parsing and normalization
+│   ├── event_parser.py         # Main parser that routes events to specific parsers
+│   ├── event_type.py           # Event type definitions and enums
+│   ├── normalized_event.py    # Normalized event data structure
+│   └── parsers/                # Event-specific parsers
+│       ├── base.py             # Abstract base parser
+│       ├── cloudwatch.py       # CloudWatch alarm parser
+│       ├── securityhub.py      # Security Hub findings parser
+│       ├── guardduty.py        # GuardDuty findings parser
+│       ├── kms.py              # KMS key deletion parser
+│       └── default.py          # Default parser for unknown events
+├── formatters/                 # Message formatting for different platforms
+│   ├── base_formatter.py       # Abstract base formatter
+│   ├── slack_formatter.py      # Slack message formatting
+│   └── teams_formatter.py      # Microsoft Teams message formatting
+├── senders/                    # Message sending to different platforms
+│   ├── base_sender.py          # Abstract base sender
+│   ├── slack_sender.py         # Slack webhook sender
+│   └── teams_sender.py         # Teams webhook sender
+├── utils/                      # Utility functions
+│   ├── secrets.py              # AWS Secrets Manager integration
+│   └── strings.py              # String utility functions
+└── tests/                      # Test files
+    ├── test_lambda_function.py # Integration tests for Lambda handler
+    └── [module]/tests/         # Unit tests for each module
+```
+
+### Architecture Overview
+
+The code follows a pipeline architecture:
+
+1. **Event Reception**: The `lambda_handler` receives AWS events (typically from SNS)
+2. **Event Parsing**: The `EventParser` identifies the event type and uses the appropriate parser to normalize it into a `NormalizedEvent`
+3. **Message Formatting**: A platform-specific formatter (Slack or Teams) converts the normalized event into a formatted message
+4. **Message Sending**: A platform-specific sender delivers the message to the target webhook
+
+This design allows for easy extension:
+
+- Add new event types by creating a new parser in `events/parsers/`
+- Add new platforms by implementing `BaseFormatter` and `MessageSender` subclasses
+- Modify formatting logic without affecting parsing or sending logic
+
+### Setting Up Development Environment
+
+1. **Create a virtual environment**:
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+2. **Install dependencies**:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Running Tests
+
+Tests are organized to mirror the code structure. To run all tests:
+
+```bash
+# Using make (recommended)
+make test-python
+
+# Or directly with pytest
+pytest assets/notifications/ -v
+```
+
+To run specific test files or modules:
+
+```bash
+# Run tests for a specific module
+pytest assets/notifications/events/tests/ -v
+pytest assets/notifications/formatters/tests/ -v
+pytest assets/notifications/utils/tests/ -v
+
+# Run a specific test file
+pytest assets/notifications/tests/test_lambda_function.py -v
+
+# Run a specific test
+pytest assets/notifications/utils/tests/test_secrets.py::test_get_secret -v
+```
+
+The test suite includes:
+
+- **Unit tests**: Test individual components in isolation
+- **Integration tests**: Test the full Lambda handler with mocked HTTP servers
+- **Mocking**: Uses `unittest.mock` for AWS services and `pytest-httpserver` for webhook testing
+
+### Test Requirements
+
+The test suite requires the following dependencies (listed in `requirements.txt`):
+
+- `pytest>=7.0.0` - Testing framework
+- `pytest-httpserver>=1.0.0` - HTTP server for testing webhooks
+- `werkzeug>=2.0.0` - Dependency for pytest-httpserver
+- `boto3>=1.26.0` - AWS SDK (used in code and tests)
+
 ## Maintenance
 
 Frequently (quartley at least) check and upgrade:
@@ -97,11 +205,11 @@ Frequently (quartley at least) check and upgrade:
 | <a name="input_lambda_runtime"></a> [lambda\_runtime](#input\_lambda\_runtime) | The runtime to use for the Lambda function | `string` | `"python3.13"` | no |
 | <a name="input_memory_size"></a> [memory\_size](#input\_memory\_size) | Amount of memory in MB your Lambda Function can use at runtime | `number` | `128` | no |
 | <a name="input_notification_platform"></a> [notification\_platform](#input\_notification\_platform) | Platform to send notifications to (slack or teams) | `string` | `"slack"` | no |
-| <a name="input_slack"></a> [slack](#input\_slack) | The configuration for Slack notifications | <pre>object({<br/>    lambda_name = optional(string, "slack-notify")<br/>    # The name of the lambda function to create<br/>    lambda_description = optional(string, "Lambda function to send slack notifications")<br/>    # An optional secret name in secrets manager to use for the slack configuration<br/>    webhook_url = optional(string)<br/>  })</pre> | `null` | no |
+| <a name="input_slack"></a> [slack](#input\_slack) | The configuration for Slack notifications | <pre>object({<br/>    lambda_name = optional(string, "slack-notify")<br/>    # The name of the lambda function to create<br/>    lambda_description = optional(string, "Lambda function to send slack notifications")<br/>    # An optional secret name in secrets manager to use for the slack configuration<br/>    webhook_url = optional(string)<br/>    # An optional ARN for a secret in secrets manager containing the webhook url details<br/>    webhook_arn = optional(string, null)<br/>  })</pre> | `null` | no |
 | <a name="input_sns_topic_policy"></a> [sns\_topic\_policy](#input\_sns\_topic\_policy) | The policy to attach to the sns topic, else we default to account root | `string` | `null` | no |
 | <a name="input_subscribers"></a> [subscribers](#input\_subscribers) | Optional list of custom subscribers to the SNS topic | <pre>map(object({<br/>    protocol = string<br/>    # The protocol to use. The possible values for this are: sqs, sms, lambda, application. (http or https are partially supported, see below).<br/>    endpoint = string<br/>    # The endpoint to send data to, the contents will vary with the protocol. (see below for more information)<br/>    endpoint_auto_confirms = bool<br/>    # Boolean indicating whether the end point is capable of auto confirming subscription e.g., PagerDuty (default is false)<br/>    raw_message_delivery = bool<br/>    # Boolean indicating whether or not to enable raw message delivery (the original message is directly passed, not wrapped in JSON with the original message in the message property) (default is false)<br/>  }))</pre> | `{}` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to all resources | `map(string)` | `{}` | no |
-| <a name="input_teams"></a> [teams](#input\_teams) | The configuration for teams notifications | <pre>object({<br/>    lambda_name = optional(string, "teams-notify")<br/>    # The name of the lambda function to create<br/>    lambda_description = optional(string, "Lambda function to send teams notifications")<br/>    # An optional secret name in secrets manager to use for the slack configuration<br/>    webhook_url = optional(string)<br/>  })</pre> | `null` | no |
+| <a name="input_teams"></a> [teams](#input\_teams) | The configuration for teams notifications | <pre>object({<br/>    lambda_name = optional(string, "teams-notify")<br/>    # The name of the lambda function to create<br/>    lambda_description = optional(string, "Lambda function to send teams notifications")<br/>    # An optional secret name in secrets manager to use for the slack configuration<br/>    webhook_url = optional(string)<br/>    # An optional ARN for a secret in secrets manager containing the webhook url details<br/>    webhook_arn = optional(string, null)<br/>  })</pre> | `null` | no |
 | <a name="input_timeout"></a> [timeout](#input\_timeout) | The amount of time your Lambda Function has to run in seconds | `number` | `30` | no |
 
 ## Outputs
