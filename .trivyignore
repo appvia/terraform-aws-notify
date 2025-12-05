@@ -22,4 +22,8 @@ AVD-DS-0015
 
 # Lambda function tracing not enabled (LOW)
 # https://avd.aquasec.com/misconfig/avd-aws-0066
-AVD-AWS-0066
+AVD-AWS-0066A
+
+# SNS topic not encrypted (LOW)
+# https://avd.aquasec.com/misconfig/aws/sns/avd-aws-0095/
+AVD-AWS-0095
