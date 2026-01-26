@@ -59,7 +59,7 @@ resource "aws_lambda_permission" "sns" {
 module "lambda_function" {
   count   = local.enable_notifications ? 1 : 0
   source  = "terraform-aws-modules/lambda/aws"
-  version = "8.2.0"
+  version = "8.3.0"
 
   description    = "Lambda function to process AWS events and send notifications to Slack/Teams"
   tags           = var.tags
