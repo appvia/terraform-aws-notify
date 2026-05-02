@@ -6,12 +6,7 @@ from notifications.events import EventParser
 from notifications.formatters import SlackFormatter, TeamsFormatter
 from notifications.senders import SlackSender, TeamsSender
 from notifications.utils.secrets import get_secret
-import logging
-
-# Configure logging
-logger = logging.getLogger()
-log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
-logger.setLevel(getattr(logging, log_level, logging.INFO))
+from notifications.utils.logging import logger
 
 
 def get_notification_config():
@@ -41,7 +36,6 @@ def get_notification_config():
         URL is missing
     """
     platform = os.environ.get("NOTIFICATION_PLATFORM", "slack").lower()
-    logger.debug("Notification platform: %s", platform)
 
     if platform not in ["slack", "teams"]:
         raise ValueError(f"Unsupported notification platform: {platform}")
@@ -63,13 +57,34 @@ def get_notification_config():
 def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
     """
     Main Lambda handler to process various AWS events and send notifications
+
+    Args:
+        event: The event to process
+        context: The context of the Lambda function
+
+    Returns:
+        Dict[str, Any]: The response from the Lambda function
     """
-    logger.debug("Received event: %s", json.dumps(event))
+    logger.info(
+        "Processing notification event",
+        extra={
+            "action": "lambda_handler",
+            "event": "lambda_handler",
+            "event": json.dumps(event),
+        }
+    )
 
     try:
         # Get notification configuration
         config = get_notification_config()
-        logger.debug("Using platform: %s", config["platform"])
+
+        logger.info(
+            "Using notification platform",
+            extra={
+                "action": "lambda_handler",
+                "platform": config["platform"],
+            }
+        )
 
         # Validate platform
         if config["platform"] not in ["slack", "teams"]:
@@ -79,7 +94,14 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
 
         # If the webhook ARN is present, we need to retrieve the secret from the ARN
         if config["webhook_arn"] != "":
-            logger.info("Retrieving webhook URL from secret: %s", config["webhook_arn"])
+            logger.info(
+                "Retrieving webhook URL from secret",
+                extra={
+                    "action": "lambda_handler",
+                    "event": "lambda_handler",
+                    "webhook_arn": config["webhook_arn"],
+                }
+            )
 
             client = boto3.client('secretsmanager')
             secret = get_secret(client, config["webhook_arn"])
@@ -93,8 +115,16 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
         # Parse and normalize the event
         parser = EventParser()
         normalized_event = parser.parse_event(event)
+
         # Convert normalized_event to dict before logging
-        logger.debug("Normalized event: %s", json.dumps(normalized_event.to_dict()))
+        logger.debug(
+            "Normalized event created",
+            extra={
+                "action": "lambda_handler",
+                "event": "lambda_handler",
+                "normalized_event": json.dumps(normalized_event.to_dict()),
+            }
+        )
 
         # Create appropriate formatter and sender based on platform
         if config["platform"] == "slack":
@@ -106,12 +136,23 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
 
         # Format the message
         message = formatter.format(normalized_event)
-        logger.debug("Formatted message: %s", json.dumps(message))
 
-        # Send the message
-        logger.debug("Attempting to send message")
+        logger.debug(
+            "Formatted message",
+            extra={
+                "action": "lambda_handler",
+                "event": "lambda_handler",
+                "message": json.dumps(message),
+            }
+        )
+        # Attempt to send the message
         success = sender.send_message(message)
-        logger.info("Message sent successfully: %s", success)
+
+        logger.info("Message sent successfully", extra={
+            "action": "lambda_handler",
+            "event": "lambda_handler",
+            "success": success,
+        })
 
         return {
             "statusCode": 200 if success else 500,
@@ -127,5 +168,10 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error("Error processing event: %s", str(e), exc_info=True)
+        logger.error("Error processing event", extra={
+            "action": "lambda_handler",
+            "event": "lambda_handler",
+            "error": str(e),
+            "exc_info": True,
+        })
         raise

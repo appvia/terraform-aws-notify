@@ -70,7 +70,7 @@ module "lambda_function" {
   ephemeral_storage_size = var.ephemeral_storage_size
   function_name          = var.function_name
   function_tags          = var.tags
-  handler                = "notifications.lambda_function.lambda_handler"
+  handler                = "notifications.handler.lambda_handler"
   memory_size            = var.memory_size
   runtime                = var.lambda_runtime
   timeout                = var.timeout

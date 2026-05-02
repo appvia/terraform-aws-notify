@@ -11,7 +11,7 @@ assets_dir = str(Path(__file__).parent.parent)
 if assets_dir not in sys.path:
     sys.path.append(assets_dir)
 
-from notifications.lambda_function import lambda_handler
+from notifications.handler import lambda_handler
 from notifications.events import EventParser
 
 
