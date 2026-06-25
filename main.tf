@@ -134,10 +134,17 @@ module "lambda_function" {
     } : {},
   )
 
+  # ignore_source_code_hash prevents "inconsistent final plan" errors when the
+  # AWS provider (>=6.0) validates plan vs apply hashes for create_package=true.
+  # The ZIP is rebuilt during apply so timestamps/ordering can differ from plan.
+  ignore_source_code_hash = true
+
   source_path = [
     {
-      path     = "${path.module}/assets/"
-      patterns = ["!tests/*", "!.*\\__pycache__/.*", "!.*\\.pyc$"]
+      path = "${path.module}/assets/"
+      # Patterns are Python regex. !tests/* (glob) does not match tests/foo.py;
+      # use !.*/tests/.* to exclude test dirs at any depth.
+      patterns = ["!.*/tests/.*", "!.*/__pycache__/.*", "!.*\\.pyc$"]
     }
   ]
 
