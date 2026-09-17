@@ -142,7 +142,7 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
             extra={
                 "action": "lambda_handler",
                 "event": "lambda_handler",
-                "message": json.dumps(message),
+                "formatted_message": json.dumps(message),
             }
         )
         # Attempt to send the message
@@ -168,10 +168,9 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error("Error processing event", extra={
+        logger.error("Error processing event", exc_info=True, extra={
             "action": "lambda_handler",
             "event": "lambda_handler",
             "error": str(e),
-            "exc_info": True,
         })
         raise
