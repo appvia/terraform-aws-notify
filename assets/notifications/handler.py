@@ -28,24 +28,20 @@ def get_notification_config():
     Returns:
         dict: Configuration dictionary containing:
             - platform: str - The selected notification platform
-            - webhook_url: str - The webhook URL
-            - webhook_arn: str - The webhook ARN
+            - webhook_url: str - The webhook URL (empty if not configured)
+            - webhook_arn: str - The webhook ARN (empty if not configured)
 
     Raises:
-        ValueError: If the platform is unsupported or if the required webhook
-        URL is missing
+        ValueError: If the platform is unsupported
     """
     platform = os.environ.get("NOTIFICATION_PLATFORM", "slack").lower()
 
     if platform not in ["slack", "teams"]:
         raise ValueError(f"Unsupported notification platform: {platform}")
 
-    # Validate webhook URL based on platform
+    # Both may be empty when no notification destination has been configured
     webhook_url = os.environ.get("WEBHOOK_URL", "")
     webhook_arn = os.environ.get("WEBHOOK_ARN", "")
-
-    if not webhook_url and not webhook_arn:
-        raise ValueError("Missing WEBHOOK_URL or WEBHOOK_ARN environment variable")
 
     return {
         "platform": platform,
@@ -91,6 +87,30 @@ def lambda_handler(event: Dict[Any, Any], context: Any) -> Dict[str, Any]:
             raise ValueError(f'Invalid platform: {config["platform"]}')
 
         webhook_url = config["webhook_url"]
+
+        # If no destinations have been configured, process the event but send nothing
+        if not webhook_url and not config["webhook_arn"]:
+            parser = EventParser()
+            parser.parse_event(event)
+
+            logger.warning(
+                "No notification destinations configured, skipping notification",
+                extra={
+                    "action": "lambda_handler",
+                    "event": "lambda_handler",
+                    "notifications": 0,
+                }
+            )
+
+            return {
+                "statusCode": 200,
+                "body": json.dumps(
+                    {
+                        "message": "No notification destinations configured",
+                        "notifications": 0,
+                    }
+                ),
+            }
 
         # If the webhook ARN is present, we need to retrieve the secret from the ARN
         if config["webhook_arn"] != "":

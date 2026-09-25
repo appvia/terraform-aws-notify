@@ -11,7 +11,8 @@ assets_dir = str(Path(__file__).parent.parent)
 if assets_dir not in sys.path:
     sys.path.append(assets_dir)
 
-from notifications.handler import lambda_handler
+from notifications import handler
+from notifications.handler import get_notification_config, lambda_handler
 from notifications.events import EventParser
 
 
@@ -190,3 +191,53 @@ class TestLambdaFunction:
         assert request.headers["Content-Type"] == "application/json"
         payload = json.loads(request.get_data(as_text=True))
         assert payload is not None
+
+    def test_no_destinations_configured(self, httpserver: HTTPServer, monkeypatch):
+        """
+        Test that the lambda handler succeeds with a warning when no notification
+        destinations (WEBHOOK_URL or WEBHOOK_ARN) have been configured.
+
+        Verifies that:
+        - The lambda does not raise
+        - Returns a 200 status code indicating zero notifications were sent
+        - No request is made to the webhook
+        - A warning is logged
+        """
+        os.environ.pop("WEBHOOK_URL", None)
+        os.environ.pop("WEBHOOK_ARN", None)
+
+        warnings = []
+        monkeypatch.setattr(
+            handler.logger, "warning", lambda msg, *a, **kw: warnings.append(msg)
+        )
+
+        test_event = self.get_sns_event(
+            {
+                "AlarmName": "Test Alarm",
+                "NewStateValue": "ALARM",
+                "OldStateValue": "OK",
+                "StateChangeTime": "2024-03-21T12:00:00Z",
+                "NewStateReason": "Threshold crossed",
+                "Region": "us-east-1",
+            }
+        )
+
+        response = lambda_handler(test_event, None)
+
+        assert response["statusCode"] == 200
+        body = json.loads(response["body"])
+        assert body["notifications"] == 0
+        assert len(httpserver.log) == 0
+        assert len(warnings) == 1
+
+    def test_get_notification_config_without_destinations(self):
+        """
+        Test that the configuration no longer raises when no destinations are provided.
+        """
+        os.environ.pop("WEBHOOK_URL", None)
+        os.environ.pop("WEBHOOK_ARN", None)
+
+        config = get_notification_config()
+
+        assert config["webhook_url"] == ""
+        assert config["webhook_arn"] == ""
