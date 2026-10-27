@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 pytest = ">=7.0.0"
 pytest-httpserver = ">=1.0.0"
-werkzeug = ">=2.0.0"
+werkzeug = ">=3.1.9"
 boto3 = ">=1.26.0"
 
 [dev-packages]
